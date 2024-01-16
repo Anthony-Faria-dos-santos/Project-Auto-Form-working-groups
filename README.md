@@ -1,6 +1,6 @@
 # Système d'Organisation Automatique de Groupes de Travail
 
-Un système complet d'automatisation pour organiser des groupes de travail hebdomadaires dans un établissement d'enseignement. Le système génère automatiquement des formulaires d'inscription, crée des événements calendrier et forme des groupes basés sur les matières et disponibilités des étudiants.
+Un système complet d'automatisation pour organiser des groupes de travail hebdomadaires dans un établissement d'enseignement. Le système génère automatiquement des formulaires d'inscription chaque dimanche à 9h pour la semaine suivante. Tout est paramettrable dans les variables de configuration situées lignes 43 à 222. Chaque jour ouvré à 12h00 sera généré un ou plusieurs groupes de 2 à 4 personnes (selon ses dispo, ses chiox de matière et le nombre de personne positionnées sur ce même créneaux/support). Ils recoivent chacun une invitation avec les événements calendrier crée et les collègues de son groupe.
 
 ## Vue d'ensemble
 
@@ -57,11 +57,12 @@ Ce projet automatise la gestion des groupes de travail en permettant aux étudia
    - Exécuter la fonction `CONFIG_INITIALE()` (autoriser les permissions demandées)
    - Exécuter `DEMARRER_SYSTEME()` pour initialiser le système
    - Tester avec `TEST_COMPLET()` pour vérifier le fonctionnement
+   - Pour chaque test effectué, vous recevrez un email de confirmation avec le résultat du test sur le mail admin défini plus tôt.
 
 5. **Configuration des triggers**
    - Le système programme automatiquement les triggers nécessaires
    - Trigger hebdomadaire : génération de formulaire chaque dimanche à 9h00
-   - Trigger quotidien : formation des groupes chaque jour à 12h00
+   - Trigger quotidien : formation des groupes chaque jour ouvré à 12h00
    - Trigger de soumission : traitement des réponses en temps réel
 
 ## Utilisation
@@ -158,7 +159,7 @@ Les contributions sont les bienvenues. Pour contribuer :
 2. Créer une branche pour votre fonctionnalité
 3. Commiter vos modifications
 4. Pousser vers votre fork
-5. Ouvrir une Pull Request
+5. Ouvrir une Pull Request correctement documentée
 
 ## Licence
 
@@ -170,3 +171,72 @@ Pour toute question ou problème :
 - Ouvrir une issue sur GitHub
 - Consulter la documentation Apps Script
 - Vérifier les logs dans l'éditeur Apps Script
+
+## TODO
+
+### Améliorations majeures prévues
+
+- [ ] **Interface d'administration multi-instances**
+  - Création d'un système de comptes administrateurs
+  - Gestion de plusieurs instances persistantes par administrateur
+  - Fourniture automatique des liens de formulaires pour chaque instance
+  - Tableau de bord centralisé pour la gestion des projets
+
+- [ ] **Plateforme web multi-projets**
+  - Interface web permettant de gérer plusieurs projets simultanément
+  - Configuration différenciée par projet (matières, créneaux, paramètres)
+  - Déploiement automatisé de nouvelles instances
+  - Monitoring centralisé des performances et quotas
+
+- [ ] **Système de thèmes et templates**
+  - Templates HTML personnalisables pour les emails
+  - Thèmes visuels adaptables par projet
+  - Éviter les modifications manuelles pour chaque déploiement
+  - Bibliothèque de thèmes prédéfinis
+
+### Fonctionnalités avancées
+
+- [ ] **Intégration avec des systèmes externes**
+  - Synchronisation avec des calendriers externes (Outlook, Apple Calendar)
+  - Intégration avec des plateformes de communication (Slack, Teams)
+  - API REST pour l'intégration avec d'autres systèmes
+
+- [ ] **Amélioration de l'expérience utilisateur**
+  - Interface mobile optimisée pour les formulaires
+  - Notifications push pour les rappels de sessions
+  - Système de feedback et d'évaluation des sessions
+  - Historique des participations pour les étudiants
+
+- [ ] **Analytics et reporting**
+  - Tableaux de bord avec statistiques d'utilisation
+  - Rapports de performance des groupes formés
+  - Analyse des tendances d'inscription
+  - Export des données pour analyse externe
+
+- [ ] **Sécurité et conformité**
+  - Chiffrement des données sensibles
+  - Conformité RGPD renforcée
+  - Audit trail complet des actions
+  - Gestion des permissions granulaires
+
+- [ ] **Optimisations techniques**
+  - Cache intelligent pour réduire les appels API
+  - Gestion avancée des quotas d'emails
+  - Monitoring en temps réel des erreurs
+  - Tests automatisés complets
+
+### Améliorations mineures
+
+- [ ] **Personnalisation avancée**
+  - Langues multiples dans l'interface
+  - Personnalisation des messages d'email
+  - Configuration des couleurs et logos par projet
+  - Templates de formulaires personnalisables
+
+- [ ] **Fonctionnalités collaboratives**
+  - Système de commentaires sur les sessions
+  - Partage de documents entre participants
+  - Évaluation des sessions par les participants
+  - Recommandations de groupes basées sur l'historique
+
+*Ouvert à toutes propositions d'amélioration. N'hésitez pas à ouvrir une issue pour suggérer de nouvelles fonctionnalités.*
