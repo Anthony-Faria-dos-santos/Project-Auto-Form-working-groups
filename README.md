@@ -1,78 +1,172 @@
-# Project-Auto-Form-working-groups
+# Système d'Organisation Automatique de Groupes de Travail
 
-Automatisation des groupes de travail hebdomadaires pour ma promo à l'ESIEE-IT.
+Un système complet d'automatisation pour organiser des groupes de travail hebdomadaires dans un établissement d'enseignement. Le système génère automatiquement des formulaires d'inscription, crée des événements calendrier et forme des groupes basés sur les matières et disponibilités des étudiants.
 
-- Chaque dimanche, un nouveau formulaire Google est généré pour la semaine suivante
-- Les étudiant·e·s choisissent leurs matières, indiquent leur niveau et leurs disponibilités
-- Les événements correspondants sont créés/mis à jour dans Google Calendar
-- Une même personne peut renvoyer le formulaire dans la semaine: seule la dernière réponse est conservée
+## Vue d'ensemble
 
-## Démarrage rapide (Google Apps Script)
+Ce projet automatise la gestion des groupes de travail en permettant aux étudiants de s'inscrire à des sessions de travail collaboratif. Le système :
 
-1. Aller sur <https://script.google.com/> et créer un nouveau projet
-2. Coller le contenu du fichier `apps script/code.gs`
-3. Exécuter la fonction `demarrerScript()` une seule fois (autorisez les services si demandé)
+- Génère automatiquement un nouveau formulaire chaque dimanche pour la semaine suivante
+- Permet aux étudiants de choisir leurs matières, niveaux et créneaux de disponibilité
+- Forme automatiquement des groupes basés sur les matières communes et disponibilités
+- Crée des événements Google Calendar avec invitations automatiques
+- Gère les inscriptions multiples (remplacement des anciennes réponses)
 
-- Crée (ou trouve) l’agenda Google "Groupe de Travail"
-- Génère immédiatement le formulaire pour la semaine prochaine (titre: `Groupe d'étude – Semaine YYYY-WWW`)
-- Programme un déclencheur automatique chaque dimanche à 09:00 pour les prochaines semaines
-- Installe le déclencheur `onFormSubmit` (ici `quelquunARepondu`) pour traiter les réponses
+## Fonctionnalités principales
 
-## Ce que le script fait concrètement
+### Pour les étudiants
+- Inscription simple via formulaire Google
+- Choix de 4 matières maximum avec niveau d'accompagnement
+- Sélection de créneaux de disponibilité (campus et Discord)
+- Remplacement facile des inscriptions précédentes
+- Notifications automatiques par email
 
-### Politique de réponse (anti-doublon intelligent)
+### Pour les administrateurs
+- Génération automatique des formulaires hebdomadaires
+- Formation automatique des groupes à 12h00 chaque jour
+- Gestion des invitations calendrier
+- Rapports hebdomadaires automatiques
+- Système d'audit complet
 
-- Collecte l’email des répondants
-- Si la même personne renvoie le formulaire dans la même semaine ISO:
-  - Les anciennes réponses de la semaine sont supprimées
-  - La dernière réponse est conservée et prise en compte (mise à jour du calendrier)
-  - Un email d’information est envoyé pour confirmer la mise à jour
-- Dans la feuille de réponses, deux colonnes sont ajoutées automatiquement:
-  - `Version`: le numéro de révision de la réponse cette semaine (1, 2, ...)
-  - `Dernière mise à jour`: date/heure de la dernière modification
+## Installation et déploiement
 
-### Feuilles générées dans Google Sheets
+### Prérequis
+- Compte Google avec accès à Google Apps Script
+- Permissions pour créer des formulaires et calendriers
+- Accès à Google Sheets et Gmail
 
-- Onglet `CRENEAUX` (template des créneaux):
-  - Colonnes: `Texte`, `Début`, `Fin`, `Semaine`, `Créé le`
-  - Sert de source de vérité pour créer les événements datés
-- Onglet `AUDIT` (journal des actions):
-  - Colonnes: `Horodatage`, `Email`, `Semaine`, `Action` (SUBMIT|REPLACE), `LigneConservee`, `LignesSupprimees`, `IP`
-  - Remarque: l’IP n’est pas fournie par Google Forms; la valeur est `N/A` par défaut.
+### Déploiement étape par étape
 
-### Agenda Google (synchronisation)
+1. **Cloner le projet**
+   ```bash
+   git clone https://github.com/Anthony-Faria-dos-santos/Project-Auto-Form-working-groups.git
+   cd Project-Auto-Form-working-groups
+   ```
 
-- Un événement est créé/mis à jour pour chaque couple `(créneau daté, matière)`
-- Le titre suit le format: `Groupe <matière> — <libellé de créneau>`
-- La description contient la liste des participants (nom + pseudo Discord éventuel + niveau)
+2. **Créer un nouveau projet Google Apps Script**
+   - Aller sur [script.google.com](https://script.google.com)
+   - Cliquer sur "Nouveau projet"
+   - Remplacer le contenu par défaut par le code du fichier `apps script/code.gs`
 
-### Créneaux datés (affichage lisible)
+3. **Configuration initiale**
+   - Modifier la variable `CONFIG.EMAIL_ADMIN` avec l'email de l'administrateur
+   - Ajuster les matières disponibles dans `CONFIG.MATIERES`
+   - Personnaliser les créneaux dans `CONFIG.CRENEAUX`
 
-- Les libellés montrent: `Jour JJ/MM HH:MM–HH:MM • Semaine YYYY-WWW • Lieu`
-- Exemple: `Jeudi 12/10 13:00–17:00 • Semaine 2025-W41 • Campus`
+4. **Premier déploiement**
+   - Exécuter la fonction `CONFIG_INITIALE()` (autoriser les permissions demandées)
+   - Exécuter `DEMARRER_SYSTEME()` pour initialiser le système
+   - Tester avec `TEST_COMPLET()` pour vérifier le fonctionnement
 
-## Paramètres ajustables
+5. **Configuration des triggers**
+   - Le système programme automatiquement les triggers nécessaires
+   - Trigger hebdomadaire : génération de formulaire chaque dimanche à 9h00
+   - Trigger quotidien : formation des groupes chaque jour à 12h00
+   - Trigger de soumission : traitement des réponses en temps réel
 
-- `NOM_AGENDA`: nom de l’agenda Google Calendar cible
-- `DEBUT_TITRE_FORM`: préfixe du titre du formulaire (la semaine ISO est ajoutée automatiquement)
-- `MATIERES`: liste des matières proposées
-- `CRENEAUX_DISPONIBLES`: modèle de créneaux projetés sur la semaine (1=lundi … 7=dimanche)
-- `NIVEAUX_AIDE`: échelle de niveau pour la grille
+## Utilisation
 
-## Limites et évolutions possibles
+### Pour les étudiants
 
-- IP du répondant: non fournie par Google Forms/Apps Script en `onFormSubmit`. Valeur `N/A` (peut être alimentée via un proxy ou un serveur web avec une redirection) [A implémenter].
-- Collecte d’emails: indispensable pour la règle “une réponse par semaine (écrasable)”.
-- Permissions: l’envoi d’emails (`MailApp`) nécessite l’autorisation lors du premier démarrage.
+1. **Inscription**
+   - Recevoir le lien du formulaire (partagé chaque dimanche)
+   - Remplir les informations personnelles
+   - Sélectionner jusqu'à 4 matières avec niveau d'accompagnement
+   - Choisir les créneaux de disponibilité
+   - Ajouter un commentaire optionnel
 
-## Roadmap / TODO
+2. **Modification d'inscription**
+   - Renvoyer le formulaire avec la même adresse email
+   - L'ancienne inscription sera automatiquement remplacée
+   - Confirmation par email de la mise à jour
 
-- Mapping Notion (base de données) avec Tally.so
-- Affiner le script selon les retours de l’enquête satisfaction
-- Sécurisation et périmètre d’accès au formulaire
-- Charte de conduite associée aux événements
-- Transparence RGPD: informations accessibles aux volontaires
-- Améliorer le formulaire (esthétique, logique, interactivité)
-- Générer un QR code unique à chaque nouveau formulaire
-- Mailing list pour cibler uniquement les volontaires
-- Rappel automatique ciblé (mail/Discord) le jour des sessions avec infos à jour
+3. **Participation aux sessions**
+   - Recevoir les invitations calendrier automatiquement
+   - Consulter les détails des groupes formés
+   - Participer aux sessions selon les créneaux choisis
+
+### Pour les administrateurs
+
+1. **Surveillance du système**
+   - Vérifier les logs dans l'onglet AUDIT du spreadsheet
+   - Surveiller les quotas d'emails avec `VERIFIER_QUOTA_EMAILS()`
+   - Consulter les rapports hebdomadaires automatiques
+
+2. **Maintenance**
+   - Utiliser `TEST_SANS_EMAILS()` pour tester sans consommer le quota
+   - Utiliser `MIGRER_STRUCTURE_SPREADSHEET_()` pour corriger les structures
+   - Surveiller les erreurs dans les logs Apps Script
+
+## Structure du projet
+
+```
+Project-Auto-Form-working-groups/
+├── apps script/
+│   └── code.gs                 # Script principal Google Apps Script
+├── Doc/
+│   └── Apps-Script-Book-V3.pdf # Documentation Apps Script
+├── templates CSV/              # Templates de données
+├── Jeux de données synthetiques/ # Données de test
+└── Integration vers Tally.so/   # Documentation d'intégration
+```
+
+## Configuration avancée
+
+### Personnalisation des matières
+Modifier la liste `CONFIG.MATIERES` pour adapter aux matières de votre établissement.
+
+### Personnalisation des créneaux
+Ajuster `CONFIG.CRENEAUX` pour définir les créneaux disponibles (campus, Discord, horaires).
+
+### Personnalisation des emails
+Modifier les templates HTML dans les fonctions `GENERER_EMAIL_HEADER_()` et `GENERER_EMAIL_FOOTER_()`.
+
+## Limites et considérations
+
+### Quotas Google Apps Script
+- Gmail gratuit : ~100 emails/jour
+- Google Workspace : ~1500 emails/jour
+- Surveiller avec `VERIFIER_QUOTA_EMAILS()`
+
+### Permissions requises
+- Accès aux services Google (Sheets, Calendar, Gmail, Forms)
+- Autorisation d'envoi d'emails
+- Création de formulaires et événements
+
+### Maintenance
+- Vérification régulière des logs
+- Surveillance des quotas d'emails
+- Tests périodiques du système
+
+## Dépannage
+
+### Problèmes courants
+- **Quota emails épuisé** : Utiliser `TEST_SANS_EMAILS()` pour les tests
+- **Colonnes décalées** : Exécuter `CORRIGER_ENTETES_REPONSES_()`
+- **Erreurs de permissions** : Réautoriser les services dans Apps Script
+
+### Fonctions de diagnostic
+- `VERIFIER_QUOTA_EMAILS()` : Vérifier le quota d'emails
+- `TEST_SANS_EMAILS()` : Tester la logique sans envoyer d'emails
+- `MIGRER_STRUCTURE_SPREADSHEET_()` : Corriger la structure des feuilles
+
+## Contribution
+
+Les contributions sont les bienvenues. Pour contribuer :
+
+1. Forker le projet
+2. Créer une branche pour votre fonctionnalité
+3. Commiter vos modifications
+4. Pousser vers votre fork
+5. Ouvrir une Pull Request
+
+## Licence
+
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+## Support
+
+Pour toute question ou problème :
+- Ouvrir une issue sur GitHub
+- Consulter la documentation Apps Script
+- Vérifier les logs dans l'éditeur Apps Script
