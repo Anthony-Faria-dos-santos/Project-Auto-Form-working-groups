@@ -232,6 +232,7 @@ Pour toute question ou problème :
   - Personnalisation des messages d'email
   - Configuration des couleurs et logos par projet
   - Templates de formulaires personnalisables
+  - Migration des formulaire via Tally.so et bdd notion.
 
 - [ ] **Fonctionnalités collaboratives**
   - Système de commentaires sur les sessions

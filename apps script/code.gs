@@ -47,7 +47,7 @@
  */
 var CONFIG = {
   // 📧 EMAIL ADMIN (À MODIFIER)
-  EMAIL_ADMIN: "DeltaTech.titan@gmail.com", // ⚠️ MODIFIER ICI
+  EMAIL_ADMIN: "XXXX@XXXX.com", // ⚠️ MODIFIER ICI
 
   // 📅 Configuration temporelle
   FUSEAU_HORAIRE: "Europe/Paris",
