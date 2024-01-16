@@ -1,87 +1,102 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════
- * 📚 SYSTÈME DE GESTION DES GROUPES D'ÉTUDE
+ * 📚 SYSTÈME DE GESTION AUTOMATISÉE DES GROUPES D'ÉTUDE
  * ═══════════════════════════════════════════════════════════════════════
- *
- * @author Anthony F.
- * @version 3.1.0 - Compatible Google Apps Script + Emails Soignés
- * @lastModified 2025-10-04
- *
- * DESCRIPTION:
- * Système automatisé de création de formulaires hebdomadaires et gestion
- * d'événements Google Calendar basé sur les inscriptions des étudiants.
- *
- * FONCTIONNALITÉS:
- * ✓ Formulaire hebdomadaire auto-généré (dimanche 9h)
- * ✓ Gestion REPLACE (1 réponse/semaine/utilisateur)
- * ✓ Création automatique d'événements Calendar
- * ✓ Audit trail complet
- * ✓ Permissions granulaires
- * ✓ Notifications email HTML soignées à toutes les étapes
- *
- * NOUVEAUTÉS v3.1.0:
- * ✓ Nouvelles matières (12 au total)
- * ✓ Type d'activité : Révisions OU Devoirs
- * ✓ Niveau obligatoire : [B3] ou [B3+L]
- * ✓ Groupe obligatoire : [L3A], [L3B] ou [L3C]
- * ✓ Prénom/Nom réels obligatoires
- * ✓ Emails HTML avec mise en forme professionnelle
- *
- * COMPATIBILITÉ:
- * ✓ JavaScript ES5 (Google Apps Script)
- * ✓ Pas d'ES6 (const, let, arrow functions, template literals)
- * ✓ Pas de Browser.msgBox (script standalone)
- *
- * INSTALLATION:
- * 1. Copier tout ce code dans un nouveau projet Apps Script
- * 2. Modifier CONFIG.EMAIL_ADMIN avec votre email (Ligne 50)
- * 3. Exécuter : CONFIG_INITIALE()
- * 4. Exécuter : DEMARRER_SYSTEME()
- * 5. Exécuter : TEST_COMPLET()
+ * 
+ * 🎯 OBJECTIF DU PROJET
+ * Automatiser l'organisation des groupes de travail pour les étudiants
+ * en générant des formulaires hebdomadaires et en créant des événements
+ * calendrier basés sur les inscriptions.
+ * 
+ * 👨‍💻 AUTEUR
+ * Anthony F. - Développeur du système
+ * 
+ * 📅 VERSION
+ * 3.1.0 - Version stable avec emails HTML et gestion avancée
+ * 
+ * 🚀 FONCTIONNALITÉS PRINCIPALES
+ * • Génération automatique de formulaires chaque dimanche à 9h
+ * • Gestion intelligente des inscriptions (remplacement des anciennes)
+ * • Création automatique d'événements Google Calendar
+ * • Formation de groupes basée sur les matières et disponibilités
+ * • Système d'audit complet pour le suivi des actions
+ * • Notifications email HTML professionnelles
+ * 
+ * 🛠️ INSTALLATION RAPIDE
+ * 1. Copier ce code dans un nouveau projet Google Apps Script
+ * 2. Modifier CONFIG.EMAIL_ADMIN avec votre adresse email
+ * 3. Exécuter CONFIG_INITIALE() pour la première configuration
+ * 4. Exécuter DEMARRER_SYSTEME() pour lancer le système
+ * 5. Exécuter TEST_COMPLET() pour vérifier le fonctionnement
+ * 
+ * ⚠️ IMPORTANT POUR LES DÉBUTANTS
+ * Ce script utilise JavaScript ES5 (pas de ES6 moderne)
+ * Toutes les variables sont déclarées avec 'var' (pas 'let' ou 'const')
+ * Les fonctions sont déclarées avec 'function' (pas d'arrow functions)
+ * 
+ * 📖 COMMENT UTILISER CE SCRIPT
+ * Le script se divise en sections logiques :
+ * 1. CONFIGURATION - Paramètres à modifier selon vos besoins
+ * 2. FONCTIONS UTILITAIRES - Outils de base pour le script
+ * 3. GESTION DES FORMULAIRES - Création et traitement des formulaires
+ * 4. GESTION DU CALENDRIER - Création des événements
+ * 5. ENVOI D'EMAILS - Notifications aux utilisateurs
+ * 6. FONCTIONS PRINCIPALES - Orchestration du système
+ * 7. FONCTIONS DE TEST - Vérification du bon fonctionnement
  */
 
 /**
  * ═══════════════════════════════════════════════════════════════════════
- * 🔧 CONFIGURATION GLOBALE
+ * 🔧 CONFIGURATION GLOBALE - PARAMÈTRES À MODIFIER SELON VOS BESOINS
  * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * Cette section contient tous les paramètres du système.
+ * Modifiez ces valeurs selon votre établissement et vos besoins.
  */
 var CONFIG = {
-  // 📧 EMAIL ADMIN (À MODIFIER)
-  EMAIL_ADMIN: "XXXX@XXXX.com", // ⚠️ MODIFIER ICI
+  
+  // 📧 EMAIL DE L'ADMINISTRATEUR (OBLIGATOIRE À MODIFIER)
+  // Remplacez par votre adresse email pour recevoir les notifications
+  EMAIL_ADMIN: "XXXX@XXXX.com", // ⚠️ MODIFIER ICI - Votre email admin
 
-  // 📅 Configuration temporelle
-  FUSEAU_HORAIRE: "Europe/Paris",
-  HEURE_CREATION_FORM: 9,
-  JOUR_CREATION_FORM: 0,
+  // 📅 PARAMÈTRES TEMPORELS
+  FUSEAU_HORAIRE: "Europe/Paris",        // Fuseau horaire (Europe/Paris, America/New_York, etc.)
+  HEURE_CREATION_FORM: 9,                // Heure de création du formulaire (9 = 9h00)
+  JOUR_CREATION_FORM: 0,                 // Jour de création (0 = dimanche, 1 = lundi, etc.)
 
-  // 📝 Noms des éléments
-  NOM_SPREADSHEET: "📊 Gestion Groupes d'Étude - Master",
-  NOM_CALENDAR: "📅 Sessions Groupe d'Étude",
-  TITRE_FORMULAIRE_PREFIX: "📝 Inscription Semaine",
+  // 📝 NOMS DES ÉLÉMENTS CRÉÉS
+  NOM_SPREADSHEET: "📊 Gestion Groupes d'Étude - Master",  // Nom du fichier Google Sheets
+  NOM_CALENDAR: "📅 Sessions Groupe d'Étude",              // Nom du calendrier Google
+  TITRE_FORMULAIRE_PREFIX: "📝 Inscription Semaine",       // Préfixe du titre des formulaires
 
-  // 🎨 Couleurs Calendar (1-11)
-  COULEUR_JEUDI: "9",
-  COULEUR_DISCORD: "11",
+  // 🎨 COULEURS DES ÉVÉNEMENTS CALENDRIER (1-11)
+  // Chaque couleur correspond à un type d'événement
+  COULEUR_JEUDI: "9",      // Couleur pour les sessions campus (jeudi)
+  COULEUR_DISCORD: "11",    // Couleur pour les sessions Discord
 
-  // 🗄️ Noms des onglets Spreadsheet
+  // 🗄️ NOMS DES ONGLETS DANS LE SPREADSHEET
+  // Ces noms sont utilisés pour créer et accéder aux feuilles
   ONGLETS: {
-    REPONSES: "Réponses",
-    CRENEAUX: "CRENEAUX",
-    AUDIT: "AUDIT",
-    CONFIG: "CONFIG",
-    ARCHIVE: "ARCHIVE",
+    REPONSES: "Réponses",    // Feuille contenant les réponses des étudiants
+    CRENEAUX: "CRENEAUX",   // Feuille contenant les créneaux disponibles
+    AUDIT: "AUDIT",         // Feuille de suivi des actions (journal)
+    CONFIG: "CONFIG",       // Feuille de configuration
+    ARCHIVE: "ARCHIVE",     // Feuille d'archivage des anciennes réponses
+    GROUPES: "GROUPES",     // Feuille de persistance des groupes formés
   },
 
-  // 🔑 Clés de propriétés
+  // 🔑 CLÉS POUR STOCKER LES INFORMATIONS
+  // Ces clés permettent de sauvegarder les IDs des éléments créés
   PROPS: {
-    ID_SPREADSHEET: "ID_SPREADSHEET",
-    ID_CALENDAR: "ID_CALENDAR",
-    ID_FORM: "ID_FORM_ACTUEL",
-    SEMAINE_FORM: "SEMAINE_FORM_ACTUEL",
-    VERSION: "VERSION_SYSTEME",
+    ID_SPREADSHEET: "ID_SPREADSHEET",     // ID du fichier Google Sheets
+    ID_CALENDAR: "ID_CALENDAR",           // ID du calendrier Google
+    ID_FORM: "ID_FORM_ACTUEL",            // ID du formulaire actuel
+    SEMAINE_FORM: "SEMAINE_FORM_ACTUEL",  // Numéro de semaine du formulaire actuel
+    VERSION: "VERSION_SYSTEME",           // Version du système
   },
 
-  // 📚 MATIÈRES DISPONIBLES
+  // 📚 MATIÈRES DISPONIBLES DANS LE FORMULAIRE
+  // Modifiez cette liste selon les matières de votre établissement
   MATIERES: [
     "Mathématiques",
     "Anglais professionnel - Préparation TOEIC",
@@ -97,50 +112,69 @@ var CONFIG = {
     "LIBRE (Discuter, jouer, refaire le monde)",
   ],
 
-  // 📊 TYPE D'ACTIVITÉ
+  // 📊 TYPES D'ACTIVITÉ POUR CHAQUE MATIÈRE
+  // Les étudiants peuvent choisir le type d'activité pour chaque matière
   TYPES_ACTIVITE: ["📝 Révisions", "✍️ Devoirs"],
 
-  // ✅ ACCOMPAGNEMENT
+  // ✅ NIVEAUX D'ACCOMPAGNEMENT
+  // Niveau d'aide souhaité par l'étudiant pour chaque matière
   NIVEAUX_ACCOMPAGNEMENT: [
-    "🎓 Je viens aider",
-    "✅ Je consolide mes acquis",
-    "🤔 J'ai besoin d'aide",
-    "🆘 Je suis coulé",
+    "🎓 Je viens aider",           // L'étudiant peut aider les autres
+    "✅ Je consolide mes acquis",  // L'étudiant veut confirmer ses connaissances
+    "🤔 J'ai besoin d'aide",      // L'étudiant a besoin d'aide
+    "🆘 Je suis coulé",           // L'étudiant a vraiment besoin d'aide
   ],
 
-  // 🎓 NIVEAUX DISPONIBLES
+  // 🎓 NIVEAUX D'ÉTUDE DISPONIBLES
+  // Niveau académique de l'étudiant
   NIVEAUX: ["[B3] Bachelor 3", "[B3+L] Bachelor 3 + Licence"],
 
-  // 👥 GROUPES DISPONIBLES
+  // 👥 GROUPES DE CLASSE DISPONIBLES
+  // Groupe de classe de l'étudiant
   GROUPES: ["[L3A] Groupe A", "[L3B] Groupe B", "[L3C] Groupe C"],
 
-  // 📊 Structure colonnes Réponses (25 colonnes au total)
+  // 📊 STRUCTURE DES COLONNES DANS LE SPREADSHEET (25 colonnes au total)
+  // Cette structure définit l'ordre des colonnes dans la feuille "Réponses"
+  // Chaque numéro correspond à la position de la colonne (1 = A, 2 = B, etc.)
   COLONNES_REPONSES: {
-    TIMESTAMP: 1,
-    EMAIL: 2,
-    PRENOM: 3,
-    NOM: 4,
-    NIVEAU: 5,
-    GROUPE: 6,
-    MATIERE1: 7,
-    TYPE1: 8,
-    ACCOMPAGNEMENT1: 9,
-    MATIERE2: 10,
-    TYPE2: 11,
-    ACCOMPAGNEMENT2: 12,
-    MATIERE3: 13,
-    TYPE3: 14,
-    ACCOMPAGNEMENT3: 15,
-    MATIERE4: 16,
-    TYPE4: 17,
-    ACCOMPAGNEMENT4: 18,
-    JEUDI_CAMPUS: 19,
-    LUNDI_DISCORD: 20,
-    MARDI_DISCORD: 21,
-    MERCREDI_DISCORD: 22,
-    JEUDI_DISCORD: 23,
-    VENDREDI_DISCORD: 24,
-    COMMENTAIRE: 25,
+    // Informations de base
+    TIMESTAMP: 1,        // Date et heure de la réponse
+    EMAIL: 2,            // Adresse email de l'étudiant
+    PRENOM: 3,           // Prénom de l'étudiant
+    NOM: 4,              // Nom de l'étudiant
+    NIVEAU: 5,           // Niveau d'étude (B3, B3+L)
+    GROUPE: 6,           // Groupe de classe (L3A, L3B, L3C)
+    
+    // Matière 1 (obligatoire)
+    MATIERE1: 7,         // Première matière choisie
+    TYPE1: 8,           // Type d'activité pour la matière 1
+    ACCOMPAGNEMENT1: 9, // Niveau d'accompagnement pour la matière 1
+    
+    // Matière 2 (obligatoire)
+    MATIERE2: 10,        // Deuxième matière choisie
+    TYPE2: 11,          // Type d'activité pour la matière 2
+    ACCOMPAGNEMENT2: 12, // Niveau d'accompagnement pour la matière 2
+    
+    // Matière 3 (optionnelle)
+    MATIERE3: 13,        // Troisième matière choisie
+    TYPE3: 14,          // Type d'activité pour la matière 3
+    ACCOMPAGNEMENT3: 15, // Niveau d'accompagnement pour la matière 3
+    
+    // Matière 4 (optionnelle)
+    MATIERE4: 16,        // Quatrième matière choisie
+    TYPE4: 17,          // Type d'activité pour la matière 4
+    ACCOMPAGNEMENT4: 18, // Niveau d'accompagnement pour la matière 4
+    
+    // Créneaux de disponibilité
+    JEUDI_CAMPUS: 19,    // Disponible jeudi après-midi au campus
+    LUNDI_DISCORD: 20,   // Disponible lundi soir sur Discord
+    MARDI_DISCORD: 21,   // Disponible mardi soir sur Discord
+    MERCREDI_DISCORD: 22, // Disponible mercredi soir sur Discord
+    JEUDI_DISCORD: 23,   // Disponible jeudi soir sur Discord
+    VENDREDI_DISCORD: 24, // Disponible vendredi soir sur Discord
+    
+    // Commentaire optionnel
+    COMMENTAIRE: 25,     // Commentaire libre de l'étudiant
   },
 
   // 📋 En-têtes exacts pour les 25 colonnes Réponses
@@ -223,12 +257,26 @@ var CONFIG = {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════
+ * 🛠️ FONCTIONS UTILITAIRES - OUTILS DE BASE POUR LE SCRIPT
+ * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * Ces fonctions sont utilisées par les autres parties du script.
+ * Elles fournissent des outils de base pour la gestion des emails,
+ * des dates, et d'autres opérations courantes.
+ */
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════
  * 🎨 TEMPLATES EMAIL HTML
  * ═══════════════════════════════════════════════════════════════════════
  */
 
 /**
- * Génère le header HTML pour les emails
+ * Génère l'en-tête HTML pour les emails
+ * Cette fonction crée le début d'un email HTML avec un titre et un emoji
+ * @param {string} titre - Le titre de l'email (ex: "Inscription confirmée")
+ * @param {string} emoji - L'emoji à afficher (ex: "✅")
+ * @return {string} - Le code HTML complet de l'en-tête
  */
 function GENERER_EMAIL_HEADER_(titre, emoji) {
   return (
@@ -269,7 +317,9 @@ function GENERER_EMAIL_HEADER_(titre, emoji) {
 }
 
 /**
- * Génère le footer HTML pour les emails
+ * Génère le pied de page HTML pour les emails
+ * Cette fonction crée la fin d'un email HTML avec les informations de contact
+ * @return {string} - Le code HTML complet du pied de page
  */
 function GENERER_EMAIL_FOOTER_() {
   return (
@@ -288,12 +338,30 @@ function GENERER_EMAIL_FOOTER_() {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════
- * 🚀 CONFIGURATION INITIALE
+ * 🚀 FONCTIONS PRINCIPALES - ORCHESTRATION DU SYSTÈME
+ * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * Ces fonctions constituent le cœur du système. Elles orchestrent
+ * la création des formulaires, la gestion des réponses, et la
+ * formation des groupes.
+ */
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ * 🔧 CONFIGURATION INITIALE
  * ═══════════════════════════════════════════════════════════════════════
  */
 
 /**
- * Lance la configuration initiale du système
+ * Configuration initiale du système
+ * Cette fonction doit être exécutée une seule fois au début
+ * Elle crée le spreadsheet, le calendrier, et configure les permissions
+ * 
+ * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * 1. Modifiez d'abord CONFIG.EMAIL_ADMIN avec votre email
+ * 2. Exécutez cette fonction en premier
+ * 3. Autorisez toutes les permissions demandées
+ * 4. Vérifiez que tout s'est bien passé dans les logs
  */
 function CONFIG_INITIALE() {
   Logger.log("═══════════════════════════════════════════════════════");
