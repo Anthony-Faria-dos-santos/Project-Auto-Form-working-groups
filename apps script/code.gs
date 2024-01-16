@@ -10,6 +10,8 @@
  *
  * 👨‍💻 AUTEUR
  * Anthony F. - Développeur du système
+ * https://github.com/Anthony-Faria-dos-santos
+ * Si tu a aimé ce projet, lâche une ⭐️ sur mon repo 😉 🙏🏼
  *
  * 📅 VERSION
  * 3.1.0 - Version stable avec emails HTML et gestion avancée
@@ -56,7 +58,7 @@
 var CONFIG = {
   // 📧 EMAIL DE L'ADMINISTRATEUR (OBLIGATOIRE À MODIFIER)
   // Remplacez par votre adresse email pour recevoir les notifications
-  EMAIL_ADMIN: "XXXX@XXXX.com", // ⚠️ MODIFIER ICI - Votre email admin
+  EMAIL_ADMIN: "anthony.devfsjs@gmail.com", // ⚠️ MODIFIER ICI - Votre email admin
 
   // 📅 PARAMÈTRES TEMPORELS
   FUSEAU_HORAIRE: "Europe/Paris", // Fuseau horaire (Europe/Paris, America/New_York, etc.)
@@ -64,7 +66,7 @@ var CONFIG = {
   JOUR_CREATION_FORM: 0, // Jour de création (0 = dimanche, 1 = lundi, etc.)
 
   // 📝 NOMS DES ÉLÉMENTS CRÉÉS
-  NOM_SPREADSHEET: "📊 Gestion Groupes d'Étude - Master", // Nom du fichier Google Sheets
+  NOM_SPREADSHEET: "📊 Gestion Groupes d'Étude - BACHELORS 3", // Nom du fichier Google Sheets
   NOM_CALENDAR: "📅 Sessions Groupe d'Étude", // Nom du calendrier Google
   TITRE_FORMULAIRE_PREFIX: "📝 Inscription Semaine", // Préfixe du titre des formulaires
 
@@ -558,7 +560,7 @@ function CONFIG_INITIALE() {
  * ═══════════════════════════════════════════════════════════════════════
  * 📊 GESTION DES SPREADSHEETS ET DONNÉES
  * ═══════════════════════════════════════════════════════════════════════
- * 
+ *
  * Ces fonctions gèrent la création et la configuration des fichiers
  * Google Sheets utilisés pour stocker les données du système.
  */
@@ -572,11 +574,11 @@ function CONFIG_INITIALE() {
  * - Onglet "CONFIG" : Configuration du système
  * - Onglet "ARCHIVE" : Archivage des anciennes réponses
  * - Onglet "GROUPES" : Persistance des groupes formés
- * 
+ *
  * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
  * Cette fonction est appelée automatiquement par CONFIG_INITIALE()
  * Ne l'exécutez pas manuellement sauf en cas de problème
- * 
+ *
  * @return {string} - L'ID du spreadsheet créé
  */
 function CREER_SPREADSHEET_() {
@@ -788,7 +790,7 @@ function CREER_SPREADSHEET_() {
  * ═══════════════════════════════════════════════════════════════════════
  * 📅 GESTION DU CALENDRIER GOOGLE
  * ═══════════════════════════════════════════════════════════════════════
- * 
+ *
  * Ces fonctions gèrent la création et la configuration du calendrier
  * Google utilisé pour les événements de groupe.
  */
@@ -799,11 +801,11 @@ function CREER_SPREADSHEET_() {
  * - Nom personnalisé selon CONFIG.NOM_CALENDAR
  * - Couleurs différenciées pour les types d'événements
  * - Permissions configurées pour l'administrateur
- * 
+ *
  * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
  * Cette fonction est appelée automatiquement par CONFIG_INITIALE()
  * Le calendrier sera visible dans votre Google Calendar
- * 
+ *
  * @return {string} - L'ID du calendrier créé
  */
 function CREER_CALENDAR_() {
@@ -944,7 +946,7 @@ function ECRIRE_AUDIT_(action, details) {
  * ═══════════════════════════════════════════════════════════════════════
  * 🚀 ORCHESTRATION PRINCIPALE DU SYSTÈME
  * ═══════════════════════════════════════════════════════════════════════
- * 
+ *
  * Cette fonction est le cœur du système. Elle orchestre toutes les
  * opérations principales : création de formulaires, gestion des triggers,
  * et configuration complète du système.
@@ -957,11 +959,11 @@ function ECRIRE_AUDIT_(action, details) {
  * 2. Crée le formulaire pour la semaine courante
  * 3. Configure tous les triggers automatiques
  * 4. Programme la planification quotidienne des groupes
- * 
+ *
  * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
  * Exécutez cette fonction APRÈS CONFIG_INITIALE()
  * Cette fonction configure le système pour fonctionner automatiquement
- * 
+ *
  * @return {boolean} - true si le démarrage s'est bien passé
  */
 function DEMARRER_SYSTEME() {
@@ -1269,7 +1271,7 @@ function INSTALLER_TRIGGER_FORMULAIRE_() {
  * ═══════════════════════════════════════════════════════════════════════
  * 📝 GESTION DES FORMULAIRES GOOGLE
  * ═══════════════════════════════════════════════════════════════════════
- * 
+ *
  * Ces fonctions gèrent la création et la configuration des formulaires
  * Google utilisés pour collecter les inscriptions des étudiants.
  */
@@ -1282,11 +1284,11 @@ function INSTALLER_TRIGGER_FORMULAIRE_() {
  * 3. Configure les questions pour les matières et créneaux
  * 4. Programme le trigger de traitement des réponses
  * 5. Envoie le lien du formulaire à l'administrateur
- * 
+ *
  * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
  * Cette fonction est appelée automatiquement par un trigger
  * Elle crée un formulaire complet avec toutes les questions nécessaires
- * 
+ *
  * @return {string} - L'ID du formulaire créé
  */
 function CREER_FORMULAIRE_HEBDO_() {
@@ -2278,7 +2280,7 @@ function NOTIFIER_ADMIN_NOUVELLE_INSCRIPTION_(
  * ═══════════════════════════════════════════════════════════════════════
  * 🧪 FONCTIONS DE TEST ET DIAGNOSTIC
  * ═══════════════════════════════════════════════════════════════════════
- * 
+ *
  * Ces fonctions permettent de tester et diagnostiquer le système
  * pour s'assurer que tout fonctionne correctement.
  */
@@ -2291,11 +2293,11 @@ function NOTIFIER_ADMIN_NOUVELLE_INSCRIPTION_(
  * 3. L'envoi d'emails
  * 4. La formation de groupes
  * 5. La gestion des triggers
- * 
+ *
  * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
  * Exécutez cette fonction APRÈS CONFIG_INITIALE() et DEMARRER_SYSTEME()
  * Elle vous dira si tout fonctionne correctement
- * 
+ *
  * @return {Object} - Résultats des tests avec statistiques
  */
 function TEST_COMPLET() {
@@ -3514,7 +3516,7 @@ function PROGRAMMER_PLANIFICATION_QUOTIDIENNE_MIDI_() {
  * ═══════════════════════════════════════════════════════════════════════
  * 🧩 FORMATION AUTOMATIQUE DES GROUPES
  * ═══════════════════════════════════════════════════════════════════════
- * 
+ *
  * Ces fonctions gèrent la formation automatique des groupes de travail
  * basée sur les matières choisies et les disponibilités des étudiants.
  */
@@ -3527,11 +3529,11 @@ function PROGRAMMER_PLANIFICATION_QUOTIDIENNE_MIDI_() {
  * 3. Charge les candidats pour chaque créneau
  * 4. Forme des groupes de 2-4 personnes avec matières communes
  * 5. Crée les événements calendrier et envoie les invitations
- * 
+ *
  * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
  * Cette fonction est appelée automatiquement par un trigger quotidien
  * Elle ignore les week-ends et ne traite que les jours ouvrables
- * 
+ *
  * @return {boolean} - true si la planification s'est bien passée
  */
 function PLANIFIER_GROUPES_DU_JOUR_() {
@@ -4680,6 +4682,12 @@ function TEST_SANS_EMAILS() {
  *
  * Version : 3.1.0
  * Compatible : Google Apps Script (V8 Runtime)
+
+ * 👨‍💻 AUTEUR
+ * Anthony F. - Développeur du système
+ * https://github.com/Anthony-Faria-dos-santos
+ * Si tu a aimé ce projet, lâche une ⭐️ sur mon repo 😉 🙏🏼
+ * 
  * Testé le : 2025-10-04
  *
  * ÉTAPES D'INITIALISATION DU PROJET :
