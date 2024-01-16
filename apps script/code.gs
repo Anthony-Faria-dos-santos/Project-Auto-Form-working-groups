@@ -358,10 +358,14 @@ function GENERER_EMAIL_FOOTER_() {
  * Cette fonction doit être exécutée une seule fois au début
  * Elle crée le spreadsheet, le calendrier, et configure les permissions
  *
- * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * ⚠️ IMPORTANT :
  * 1. Modifiez d'abord CONFIG.EMAIL_ADMIN avec votre email
- * 2. Exécutez cette fonction en premier
- * 3. Autorisez toutes les permissions demandées
+ * 2. Exécutez la fonction CONFIG_INITIALE() en premier (une seule et unique fois)
+ * 3. Autorisez toutes les permissions demandées          
+ * 4. Exécutez la fonction DEMARRER_SYSTEME() en deuxième
+ * 5. Exécutez la fonction TEST_COMPLET() en troisième, si tout est au  c'est bon.
+ * 6. Si besoin de Clean, exécutez NETTOYER_SYSTEME() et répéter les étapes 2 à 5.
+
  * 4. Vérifiez que tout s'est bien passé dans les logs
  */
 function CONFIG_INITIALE() {
@@ -1592,43 +1596,86 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
     // Extraire les données de la réponse
     var items = itemResponses;
 
-    var prenom = items[0].getResponse();
-    var nom = items[1].getResponse();
-    var niveau = items[2].getResponse();
-    var groupe = items[3].getResponse();
+    // CORRECTION : Structure réelle du formulaire Google Forms
+    // Le formulaire a une structure différente de ce qui était attendu
     
-    // Construire le nom complet pour les emails et logs
-    var nomComplet = prenom + " " + nom;
-
-    // MATIÈRE 1
-    var matiere1 = items[4].getResponse();
-    var type1 = items[5].getResponse();
-    var accompagnement1 = items[6].getResponse();
-
-    // MATIÈRE 2
-    var matiere2 = items[7].getResponse();
-    var type2 = items[8] ? items[8].getResponse() : "";
-    var accompagnement2 = items[9] ? items[9].getResponse() : "";
-
-    // MATIÈRE 3
-    var matiere3 = items[10].getResponse();
-    var type3 = items[11] ? items[11].getResponse() : "";
-    var accompagnement3 = items[12] ? items[12].getResponse() : "";
-
-    // MATIÈRE 4
-    var matiere4 = items[13].getResponse();
-    var type4 = items[14] ? items[14].getResponse() : "";
-    var accompagnement4 = items[15] ? items[15].getResponse() : "";
-
-    // CRÉNEAUX
-    var jeudiCampus = items[16].getResponse();
-    var lundiDiscord = items[17].getResponse();
-    var mardiDiscord = items[18].getResponse();
-    var mercrediDiscord = items[19].getResponse();
-    var jeudiDiscord = items[20].getResponse();
-    var vendrediDiscord = items[21].getResponse();
-    // COMMENTAIRE
-    var commentaire = items[22] ? items[22].getResponse() : "";
+    // Informations de base (structure réelle du formulaire)
+    var nomComplet = items[0].getResponse(); // "Nom & Prénom" (combiné)
+    var pseudoDiscord = items[1].getResponse(); // "Pseudo Discord"
+    var pseudoDiscordOptionnel = items[2].getResponse(); // "Pseudo Discord (si tu en as un)"
+    
+    // Séparer le nom complet en prénom et nom
+    var nomParts = nomComplet.split(" ");
+    var prenom = nomParts[0] || "";
+    var nom = nomParts.slice(1).join(" ") || "";
+    
+    // Matières sélectionnées (format: "Matière1, Matière2")
+    var matieresSelectionnees = items[3].getResponse();
+    
+    // Niveaux par matière (6 colonnes de niveaux)
+    var niveauMath = items[4].getResponse();
+    var niveauSystInfo = items[5].getResponse();
+    var niveauAnglais = items[6].getResponse();
+    var niveauCyber = items[7].getResponse();
+    var niveauLinux = items[8].getResponse();
+    var niveauPython = items[9].getResponse();
+    
+    // Créneaux sélectionnés
+    var creneauxSelectionnes = items[10].getResponse();
+    
+    // Commentaire optionnel
+    var commentaire = items[11] ? items[11].getResponse() : "";
+    
+    // Pour la compatibilité avec le reste du code, on va extraire les matières
+    // et leurs niveaux correspondants
+    var matieresArray = matieresSelectionnees.split(",").map(function(m) { return m.trim(); });
+    
+    // Initialiser les variables de matières
+    var matiere1 = matieresArray[0] || "";
+    var matiere2 = matieresArray[1] || "";
+    var matiere3 = "";
+    var matiere4 = "";
+    
+    // Déterminer les niveaux pour les matières sélectionnées
+    var type1 = "";
+    var type2 = "";
+    var type3 = "";
+    var type4 = "";
+    var accompagnement1 = "";
+    var accompagnement2 = "";
+    var accompagnement3 = "";
+    var accompagnement4 = "";
+    
+    // Mapper les niveaux selon les matières sélectionnées
+    if (matiere1) {
+      if (matiere1.includes("Mathématiques")) type1 = niveauMath;
+      else if (matiere1.includes("Systèmes d'information")) type1 = niveauSystInfo;
+      else if (matiere1.includes("Anglais")) type1 = niveauAnglais;
+      else if (matiere1.includes("Cyberstructure")) type1 = niveauCyber;
+      else if (matiere1.includes("Linux")) type1 = niveauLinux;
+      else if (matiere1.includes("Python")) type1 = niveauPython;
+    }
+    
+    if (matiere2) {
+      if (matiere2.includes("Mathématiques")) type2 = niveauMath;
+      else if (matiere2.includes("Systèmes d'information")) type2 = niveauSystInfo;
+      else if (matiere2.includes("Anglais")) type2 = niveauAnglais;
+      else if (matiere2.includes("Cyberstructure")) type2 = niveauCyber;
+      else if (matiere2.includes("Linux")) type2 = niveauLinux;
+      else if (matiere2.includes("Python")) type2 = niveauPython;
+    }
+    
+    // Pour la compatibilité, on va définir des valeurs par défaut
+    var niveau = "[B3] Bachelor 3"; // Valeur par défaut
+    var groupe = "[L3C] Groupe C"; // Valeur par défaut
+    
+    // Analyser les créneaux sélectionnés
+    var jeudiCampus = creneauxSelectionnes.includes("Jeudi") && creneauxSelectionnes.includes("Campus") ? "Oui" : "";
+    var lundiDiscord = creneauxSelectionnes.includes("Lundi") && creneauxSelectionnes.includes("Discord") ? "Oui" : "";
+    var mardiDiscord = creneauxSelectionnes.includes("Mardi") && creneauxSelectionnes.includes("Discord") ? "Oui" : "";
+    var mercrediDiscord = creneauxSelectionnes.includes("Mercredi") && creneauxSelectionnes.includes("Discord") ? "Oui" : "";
+    var jeudiDiscord = creneauxSelectionnes.includes("Jeudi") && creneauxSelectionnes.includes("Discord") ? "Oui" : "";
+    var vendrediDiscord = creneauxSelectionnes.includes("Vendredi") && creneauxSelectionnes.includes("Discord") ? "Oui" : "";
 
     // Regrouper les réponses créneaux pour simplifier l'accès plus loin.
     var creneaux = {
