@@ -1,0 +1,13 @@
+# Ignorer tout par défaut
+*
+
+# Conserver ce fichier
+!.gitignore
+
+# Autoriser uniquement le script Apps Script
+!apps script/
+!apps script/code.gs
+
+# Ignorer fichiers système macOS
+.DS_Store
+
