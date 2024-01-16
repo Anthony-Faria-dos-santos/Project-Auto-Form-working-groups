@@ -2,18 +2,18 @@
  * ═══════════════════════════════════════════════════════════════════════
  * 📚 SYSTÈME DE GESTION AUTOMATISÉE DES GROUPES D'ÉTUDE
  * ═══════════════════════════════════════════════════════════════════════
- * 
+ *
  * 🎯 OBJECTIF DU PROJET
  * Automatiser l'organisation des groupes de travail pour les étudiants
  * en générant des formulaires hebdomadaires et en créant des événements
  * calendrier basés sur les inscriptions.
- * 
+ *
  * 👨‍💻 AUTEUR
  * Anthony F. - Développeur du système
- * 
+ *
  * 📅 VERSION
  * 3.1.0 - Version stable avec emails HTML et gestion avancée
- * 
+ *
  * 🚀 FONCTIONNALITÉS PRINCIPALES
  * • Génération automatique de formulaires chaque dimanche à 9h
  * • Gestion intelligente des inscriptions (remplacement des anciennes)
@@ -21,19 +21,19 @@
  * • Formation de groupes basée sur les matières et disponibilités
  * • Système d'audit complet pour le suivi des actions
  * • Notifications email HTML professionnelles
- * 
+ *
  * 🛠️ INSTALLATION RAPIDE
  * 1. Copier ce code dans un nouveau projet Google Apps Script
  * 2. Modifier CONFIG.EMAIL_ADMIN avec votre adresse email
  * 3. Exécuter CONFIG_INITIALE() pour la première configuration
  * 4. Exécuter DEMARRER_SYSTEME() pour lancer le système
  * 5. Exécuter TEST_COMPLET() pour vérifier le fonctionnement
- * 
+ *
  * ⚠️ IMPORTANT POUR LES DÉBUTANTS
  * Ce script utilise JavaScript ES5 (pas de ES6 moderne)
  * Toutes les variables sont déclarées avec 'var' (pas 'let' ou 'const')
  * Les fonctions sont déclarées avec 'function' (pas d'arrow functions)
- * 
+ *
  * 📖 COMMENT UTILISER CE SCRIPT
  * Le script se divise en sections logiques :
  * 1. CONFIGURATION - Paramètres à modifier selon vos besoins
@@ -49,50 +49,49 @@
  * ═══════════════════════════════════════════════════════════════════════
  * 🔧 CONFIGURATION GLOBALE - PARAMÈTRES À MODIFIER SELON VOS BESOINS
  * ═══════════════════════════════════════════════════════════════════════
- * 
+ *
  * Cette section contient tous les paramètres du système.
  * Modifiez ces valeurs selon votre établissement et vos besoins.
  */
 var CONFIG = {
-  
   // 📧 EMAIL DE L'ADMINISTRATEUR (OBLIGATOIRE À MODIFIER)
   // Remplacez par votre adresse email pour recevoir les notifications
   EMAIL_ADMIN: "XXXX@XXXX.com", // ⚠️ MODIFIER ICI - Votre email admin
 
   // 📅 PARAMÈTRES TEMPORELS
-  FUSEAU_HORAIRE: "Europe/Paris",        // Fuseau horaire (Europe/Paris, America/New_York, etc.)
-  HEURE_CREATION_FORM: 9,                // Heure de création du formulaire (9 = 9h00)
-  JOUR_CREATION_FORM: 0,                 // Jour de création (0 = dimanche, 1 = lundi, etc.)
+  FUSEAU_HORAIRE: "Europe/Paris", // Fuseau horaire (Europe/Paris, America/New_York, etc.)
+  HEURE_CREATION_FORM: 9, // Heure de création du formulaire (9 = 9h00)
+  JOUR_CREATION_FORM: 0, // Jour de création (0 = dimanche, 1 = lundi, etc.)
 
   // 📝 NOMS DES ÉLÉMENTS CRÉÉS
-  NOM_SPREADSHEET: "📊 Gestion Groupes d'Étude - Master",  // Nom du fichier Google Sheets
-  NOM_CALENDAR: "📅 Sessions Groupe d'Étude",              // Nom du calendrier Google
-  TITRE_FORMULAIRE_PREFIX: "📝 Inscription Semaine",       // Préfixe du titre des formulaires
+  NOM_SPREADSHEET: "📊 Gestion Groupes d'Étude - Master", // Nom du fichier Google Sheets
+  NOM_CALENDAR: "📅 Sessions Groupe d'Étude", // Nom du calendrier Google
+  TITRE_FORMULAIRE_PREFIX: "📝 Inscription Semaine", // Préfixe du titre des formulaires
 
   // 🎨 COULEURS DES ÉVÉNEMENTS CALENDRIER (1-11)
   // Chaque couleur correspond à un type d'événement
-  COULEUR_JEUDI: "9",      // Couleur pour les sessions campus (jeudi)
-  COULEUR_DISCORD: "11",    // Couleur pour les sessions Discord
+  COULEUR_JEUDI: "9", // Couleur pour les sessions campus (jeudi)
+  COULEUR_DISCORD: "11", // Couleur pour les sessions Discord
 
   // 🗄️ NOMS DES ONGLETS DANS LE SPREADSHEET
   // Ces noms sont utilisés pour créer et accéder aux feuilles
   ONGLETS: {
-    REPONSES: "Réponses",    // Feuille contenant les réponses des étudiants
-    CRENEAUX: "CRENEAUX",   // Feuille contenant les créneaux disponibles
-    AUDIT: "AUDIT",         // Feuille de suivi des actions (journal)
-    CONFIG: "CONFIG",       // Feuille de configuration
-    ARCHIVE: "ARCHIVE",     // Feuille d'archivage des anciennes réponses
-    GROUPES: "GROUPES",     // Feuille de persistance des groupes formés
+    REPONSES: "Réponses", // Feuille contenant les réponses des étudiants
+    CRENEAUX: "CRENEAUX", // Feuille contenant les créneaux disponibles
+    AUDIT: "AUDIT", // Feuille de suivi des actions (journal)
+    CONFIG: "CONFIG", // Feuille de configuration
+    ARCHIVE: "ARCHIVE", // Feuille d'archivage des anciennes réponses
+    GROUPES: "GROUPES", // Feuille de persistance des groupes formés
   },
 
   // 🔑 CLÉS POUR STOCKER LES INFORMATIONS
   // Ces clés permettent de sauvegarder les IDs des éléments créés
   PROPS: {
-    ID_SPREADSHEET: "ID_SPREADSHEET",     // ID du fichier Google Sheets
-    ID_CALENDAR: "ID_CALENDAR",           // ID du calendrier Google
-    ID_FORM: "ID_FORM_ACTUEL",            // ID du formulaire actuel
-    SEMAINE_FORM: "SEMAINE_FORM_ACTUEL",  // Numéro de semaine du formulaire actuel
-    VERSION: "VERSION_SYSTEME",           // Version du système
+    ID_SPREADSHEET: "ID_SPREADSHEET", // ID du fichier Google Sheets
+    ID_CALENDAR: "ID_CALENDAR", // ID du calendrier Google
+    ID_FORM: "ID_FORM_ACTUEL", // ID du formulaire actuel
+    SEMAINE_FORM: "SEMAINE_FORM_ACTUEL", // Numéro de semaine du formulaire actuel
+    VERSION: "VERSION_SYSTEME", // Version du système
   },
 
   // 📚 MATIÈRES DISPONIBLES DANS LE FORMULAIRE
@@ -119,10 +118,10 @@ var CONFIG = {
   // ✅ NIVEAUX D'ACCOMPAGNEMENT
   // Niveau d'aide souhaité par l'étudiant pour chaque matière
   NIVEAUX_ACCOMPAGNEMENT: [
-    "🎓 Je viens aider",           // L'étudiant peut aider les autres
-    "✅ Je consolide mes acquis",  // L'étudiant veut confirmer ses connaissances
-    "🤔 J'ai besoin d'aide",      // L'étudiant a besoin d'aide
-    "🆘 Je suis coulé",           // L'étudiant a vraiment besoin d'aide
+    "🎓 Je viens aider", // L'étudiant peut aider les autres
+    "✅ Je consolide mes acquis", // L'étudiant veut confirmer ses connaissances
+    "🤔 J'ai besoin d'aide", // L'étudiant a besoin d'aide
+    "🆘 Je suis coulé", // L'étudiant a vraiment besoin d'aide
   ],
 
   // 🎓 NIVEAUX D'ÉTUDE DISPONIBLES
@@ -138,43 +137,43 @@ var CONFIG = {
   // Chaque numéro correspond à la position de la colonne (1 = A, 2 = B, etc.)
   COLONNES_REPONSES: {
     // Informations de base
-    TIMESTAMP: 1,        // Date et heure de la réponse
-    EMAIL: 2,            // Adresse email de l'étudiant
-    PRENOM: 3,           // Prénom de l'étudiant
-    NOM: 4,              // Nom de l'étudiant
-    NIVEAU: 5,           // Niveau d'étude (B3, B3+L)
-    GROUPE: 6,           // Groupe de classe (L3A, L3B, L3C)
-    
+    TIMESTAMP: 1, // Date et heure de la réponse
+    EMAIL: 2, // Adresse email de l'étudiant
+    PRENOM: 3, // Prénom de l'étudiant
+    NOM: 4, // Nom de l'étudiant
+    NIVEAU: 5, // Niveau d'étude (B3, B3+L)
+    GROUPE: 6, // Groupe de classe (L3A, L3B, L3C)
+
     // Matière 1 (obligatoire)
-    MATIERE1: 7,         // Première matière choisie
-    TYPE1: 8,           // Type d'activité pour la matière 1
+    MATIERE1: 7, // Première matière choisie
+    TYPE1: 8, // Type d'activité pour la matière 1
     ACCOMPAGNEMENT1: 9, // Niveau d'accompagnement pour la matière 1
-    
+
     // Matière 2 (obligatoire)
-    MATIERE2: 10,        // Deuxième matière choisie
-    TYPE2: 11,          // Type d'activité pour la matière 2
+    MATIERE2: 10, // Deuxième matière choisie
+    TYPE2: 11, // Type d'activité pour la matière 2
     ACCOMPAGNEMENT2: 12, // Niveau d'accompagnement pour la matière 2
-    
+
     // Matière 3 (optionnelle)
-    MATIERE3: 13,        // Troisième matière choisie
-    TYPE3: 14,          // Type d'activité pour la matière 3
+    MATIERE3: 13, // Troisième matière choisie
+    TYPE3: 14, // Type d'activité pour la matière 3
     ACCOMPAGNEMENT3: 15, // Niveau d'accompagnement pour la matière 3
-    
+
     // Matière 4 (optionnelle)
-    MATIERE4: 16,        // Quatrième matière choisie
-    TYPE4: 17,          // Type d'activité pour la matière 4
+    MATIERE4: 16, // Quatrième matière choisie
+    TYPE4: 17, // Type d'activité pour la matière 4
     ACCOMPAGNEMENT4: 18, // Niveau d'accompagnement pour la matière 4
-    
+
     // Créneaux de disponibilité
-    JEUDI_CAMPUS: 19,    // Disponible jeudi après-midi au campus
-    LUNDI_DISCORD: 20,   // Disponible lundi soir sur Discord
-    MARDI_DISCORD: 21,   // Disponible mardi soir sur Discord
+    JEUDI_CAMPUS: 19, // Disponible jeudi après-midi au campus
+    LUNDI_DISCORD: 20, // Disponible lundi soir sur Discord
+    MARDI_DISCORD: 21, // Disponible mardi soir sur Discord
     MERCREDI_DISCORD: 22, // Disponible mercredi soir sur Discord
-    JEUDI_DISCORD: 23,   // Disponible jeudi soir sur Discord
+    JEUDI_DISCORD: 23, // Disponible jeudi soir sur Discord
     VENDREDI_DISCORD: 24, // Disponible vendredi soir sur Discord
-    
+
     // Commentaire optionnel
-    COMMENTAIRE: 25,     // Commentaire libre de l'étudiant
+    COMMENTAIRE: 25, // Commentaire libre de l'étudiant
   },
 
   // 📋 En-têtes exacts pour les 25 colonnes Réponses
@@ -259,7 +258,7 @@ var CONFIG = {
  * ═══════════════════════════════════════════════════════════════════════
  * 🛠️ FONCTIONS UTILITAIRES - OUTILS DE BASE POUR LE SCRIPT
  * ═══════════════════════════════════════════════════════════════════════
- * 
+ *
  * Ces fonctions sont utilisées par les autres parties du script.
  * Elles fournissent des outils de base pour la gestion des emails,
  * des dates, et d'autres opérations courantes.
@@ -340,7 +339,7 @@ function GENERER_EMAIL_FOOTER_() {
  * ═══════════════════════════════════════════════════════════════════════
  * 🚀 FONCTIONS PRINCIPALES - ORCHESTRATION DU SYSTÈME
  * ═══════════════════════════════════════════════════════════════════════
- * 
+ *
  * Ces fonctions constituent le cœur du système. Elles orchestrent
  * la création des formulaires, la gestion des réponses, et la
  * formation des groupes.
@@ -356,7 +355,7 @@ function GENERER_EMAIL_FOOTER_() {
  * Configuration initiale du système
  * Cette fonction doit être exécutée une seule fois au début
  * Elle crée le spreadsheet, le calendrier, et configure les permissions
- * 
+ *
  * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
  * 1. Modifiez d'abord CONFIG.EMAIL_ADMIN avec votre email
  * 2. Exécutez cette fonction en premier
@@ -556,7 +555,29 @@ function CONFIG_INITIALE() {
  */
 
 /**
- * Crée le Spreadsheet maître avec tous les onglets
+ * ═══════════════════════════════════════════════════════════════════════
+ * 📊 GESTION DES SPREADSHEETS ET DONNÉES
+ * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * Ces fonctions gèrent la création et la configuration des fichiers
+ * Google Sheets utilisés pour stocker les données du système.
+ */
+
+/**
+ * Crée le fichier Google Sheets principal avec tous les onglets nécessaires
+ * Cette fonction crée un nouveau spreadsheet avec la structure complète :
+ * - Onglet "Réponses" : Stockage des réponses des étudiants (25 colonnes)
+ * - Onglet "CRENEAUX" : Créneaux disponibles pour les sessions
+ * - Onglet "AUDIT" : Journal des actions et modifications
+ * - Onglet "CONFIG" : Configuration du système
+ * - Onglet "ARCHIVE" : Archivage des anciennes réponses
+ * - Onglet "GROUPES" : Persistance des groupes formés
+ * 
+ * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * Cette fonction est appelée automatiquement par CONFIG_INITIALE()
+ * Ne l'exécutez pas manuellement sauf en cas de problème
+ * 
+ * @return {string} - L'ID du spreadsheet créé
  */
 function CREER_SPREADSHEET_() {
   Logger.log("📊 Création du Spreadsheet...");
@@ -765,12 +786,25 @@ function CREER_SPREADSHEET_() {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════
- * 📅 CRÉATION DU CALENDAR
+ * 📅 GESTION DU CALENDRIER GOOGLE
  * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * Ces fonctions gèrent la création et la configuration du calendrier
+ * Google utilisé pour les événements de groupe.
  */
 
 /**
- * Crée le Calendar partagé
+ * Crée le calendrier Google pour les événements de groupe
+ * Cette fonction crée un nouveau calendrier avec les paramètres appropriés :
+ * - Nom personnalisé selon CONFIG.NOM_CALENDAR
+ * - Couleurs différenciées pour les types d'événements
+ * - Permissions configurées pour l'administrateur
+ * 
+ * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * Cette fonction est appelée automatiquement par CONFIG_INITIALE()
+ * Le calendrier sera visible dans votre Google Calendar
+ * 
+ * @return {string} - L'ID du calendrier créé
  */
 function CREER_CALENDAR_() {
   Logger.log("📅 Création du Calendar...");
@@ -908,10 +942,28 @@ function ECRIRE_AUDIT_(action, details) {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════
- * 🚀 DÉMARRAGE DU SYSTÈME
+ * 🚀 ORCHESTRATION PRINCIPALE DU SYSTÈME
  * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * Cette fonction est le cœur du système. Elle orchestre toutes les
+ * opérations principales : création de formulaires, gestion des triggers,
+ * et configuration complète du système.
  */
 
+/**
+ * Démarre le système complet et configure tous les éléments
+ * Cette fonction principale :
+ * 1. Vérifie que la configuration initiale a été faite
+ * 2. Crée le formulaire pour la semaine courante
+ * 3. Configure tous les triggers automatiques
+ * 4. Programme la planification quotidienne des groupes
+ * 
+ * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * Exécutez cette fonction APRÈS CONFIG_INITIALE()
+ * Cette fonction configure le système pour fonctionner automatiquement
+ * 
+ * @return {boolean} - true si le démarrage s'est bien passé
+ */
 function DEMARRER_SYSTEME() {
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("🚀 DÉMARRAGE DU SYSTÈME");
@@ -1215,12 +1267,27 @@ function INSTALLER_TRIGGER_FORMULAIRE_() {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════
- * 📝 CRÉATION DU FORMULAIRE
+ * 📝 GESTION DES FORMULAIRES GOOGLE
  * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * Ces fonctions gèrent la création et la configuration des formulaires
+ * Google utilisés pour collecter les inscriptions des étudiants.
  */
 
 /**
- * Fonction déclenchée chaque dimanche pour créer le formulaire
+ * Crée automatiquement le formulaire pour la semaine suivante
+ * Cette fonction est déclenchée chaque dimanche à 9h00 et :
+ * 1. Calcule la semaine suivante (lundi au vendredi)
+ * 2. Crée un nouveau formulaire Google avec tous les champs
+ * 3. Configure les questions pour les matières et créneaux
+ * 4. Programme le trigger de traitement des réponses
+ * 5. Envoie le lien du formulaire à l'administrateur
+ * 
+ * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * Cette fonction est appelée automatiquement par un trigger
+ * Elle crée un formulaire complet avec toutes les questions nécessaires
+ * 
+ * @return {string} - L'ID du formulaire créé
  */
 function CREER_FORMULAIRE_HEBDO_() {
   Logger.log("═══════════════════════════════════════════════════════");
@@ -2208,7 +2275,28 @@ function NOTIFIER_ADMIN_NOUVELLE_INSCRIPTION_(
  */
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════
+ * 🧪 FONCTIONS DE TEST ET DIAGNOSTIC
+ * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * Ces fonctions permettent de tester et diagnostiquer le système
+ * pour s'assurer que tout fonctionne correctement.
+ */
+
+/**
  * Teste tous les composants du système
+ * Cette fonction de test complète vérifie :
+ * 1. La configuration du système (spreadsheet, calendrier)
+ * 2. La création de formulaires
+ * 3. L'envoi d'emails
+ * 4. La formation de groupes
+ * 5. La gestion des triggers
+ * 
+ * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * Exécutez cette fonction APRÈS CONFIG_INITIALE() et DEMARRER_SYSTEME()
+ * Elle vous dira si tout fonctionne correctement
+ * 
+ * @return {Object} - Résultats des tests avec statistiques
  */
 function TEST_COMPLET() {
   Logger.log("═══════════════════════════════════════════════════════");
@@ -3422,11 +3510,30 @@ function PROGRAMMER_PLANIFICATION_QUOTIDIENNE_MIDI_() {
   }
 }
 
-/* ======================================================================
- * 🧩 PLANIFICATION QUOTIDIENNE DES GROUPES (SQUELETTES)
- * ======================================================================
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ * 🧩 FORMATION AUTOMATIQUE DES GROUPES
+ * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * Ces fonctions gèrent la formation automatique des groupes de travail
+ * basée sur les matières choisies et les disponibilités des étudiants.
  */
 
+/**
+ * Planifie les groupes pour la journée courante
+ * Cette fonction est déclenchée chaque jour ouvré à 12h00 et :
+ * 1. Vérifie que ce n'est pas un week-end
+ * 2. Identifie les créneaux disponibles pour aujourd'hui
+ * 3. Charge les candidats pour chaque créneau
+ * 4. Forme des groupes de 2-4 personnes avec matières communes
+ * 5. Crée les événements calendrier et envoie les invitations
+ * 
+ * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * Cette fonction est appelée automatiquement par un trigger quotidien
+ * Elle ignore les week-ends et ne traite que les jours ouvrables
+ * 
+ * @return {boolean} - true si la planification s'est bien passée
+ */
 function PLANIFIER_GROUPES_DU_JOUR_() {
   try {
     var today = new Date();
