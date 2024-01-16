@@ -1596,6 +1596,9 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
     var nom = items[1].getResponse();
     var niveau = items[2].getResponse();
     var groupe = items[3].getResponse();
+    
+    // Construire le nom complet pour les emails et logs
+    var nomComplet = prenom + " " + nom;
 
     // MATIÈRE 1
     var matiere1 = items[4].getResponse();
