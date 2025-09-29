@@ -1,46 +1,78 @@
 # Project-Auto-Form-working-groups
 
-Projet destiné à automatiser la formation des groupes de travail hebdomadaires au sein de ma promotion à l'ESIEE-IT.
-Génère et envoie des formulaires de volontariat chaque dimanche
-Forme des groupes selon les matières choisies, les disponibilités et le niveau de maîtrise des modules travaillés.
-Génère un .ics automatique pour tous les participants afin de compléter automatiquement leur agenda.
+Automatisation des groupes de travail hebdomadaires pour ma promo à l'ESIEE-IT.
 
-## Note de conception initiale :
+- Chaque dimanche, un nouveau formulaire Google est généré pour la semaine suivante
+- Les étudiant·e·s choisissent leurs matières, indiquent leur niveau et leurs disponibilités
+- Les événements correspondants sont créés/mis à jour dans Google Calendar
+- Une même personne peut renvoyer le formulaire dans la semaine: seule la dernière réponse est conservée
 
-## GOOGLE SCRIPT
+## Démarrage rapide (Google Apps Script)
 
-setupInitial() :
-Trouver l'agenda "Groupe de Travail", SI NON le créer.
+1. Aller sur <https://script.google.com/> et créer un nouveau projet
+2. Coller le contenu du fichier `apps script/code.gs`
+3. Exécuter la fonction `demarrerScript()` une seule fois (autorisez les services si demandé)
 
-Créer un formulaire pour la semaine suivante (nommé Groupe d'étude – Semaine YYYY-WWW).
-Créer un trigger hebdomadaire le dimanche 09:00 pour générer le formulaire de la semaine suivante.
-Créer un trigger onFormSubmit sur le formulaire.
+- Crée (ou trouve) l’agenda Google "Groupe de Travail"
+- Génère immédiatement le formulaire pour la semaine prochaine (titre: `Groupe d'étude – Semaine YYYY-WWW`)
+- Programme un déclencheur automatique chaque dimanche à 09:00 pour les prochaines semaines
+- Installe le déclencheur `onFormSubmit` (ici `quelquunARepondu`) pour traiter les réponses
 
-onFormSubmit(e) :
-= Collecte des e-mails.
+## Ce que le script fait concrètement
 
-SI soumission de plus d'une fois dans la même semaine ISO via même email ALORS la dernière réponse est supprimée, ET un mail d'information est envoyé (Voir autorisation MailApp).
-SINON, la réponse est comptabilisée et on synchronise le calendrier.
+### Politique de réponse (anti-doublon intelligent)
 
-Créneaux datés :
-= Les libellés incluent la date (jour/mois), le créneau, le support (Campus/Discord), et la Semaine ISO.
+- Collecte l’email des répondants
+- Si la même personne renvoie le formulaire dans la même semaine ISO:
+  - Les anciennes réponses de la semaine sont supprimées
+  - La dernière réponse est conservée et prise en compte (mise à jour du calendrier)
+  - Un email d’information est envoyé pour confirmer la mise à jour
+- Dans la feuille de réponses, deux colonnes sont ajoutées automatiquement:
+  - `Version`: le numéro de révision de la réponse cette semaine (1, 2, ...)
+  - `Dernière mise à jour`: date/heure de la dernière modification
 
-= Création d'Une feuille SLOTS dans le Google Sheets des réponses --> mapper Label → Start/End ISO.
+### Feuilles générées dans Google Sheets
 
-Agenda :
-= Event créé ou mis à jour par couple (créneau daté, matière) avec la liste des participants dans la description.
+- Onglet `CRENEAUX` (template des créneaux):
+  - Colonnes: `Texte`, `Début`, `Fin`, `Semaine`, `Créé le`
+  - Sert de source de vérité pour créer les événements datés
+- Onglet `AUDIT` (journal des actions):
+  - Colonnes: `Horodatage`, `Email`, `Semaine`, `Action` (SUBMIT|REPLACE), `LigneConservee`, `LignesSupprimees`, `IP`
+  - Remarque: l’IP n’est pas fournie par Google Forms; la valeur est `N/A` par défaut.
 
+### Agenda Google (synchronisation)
 
+- Un événement est créé/mis à jour pour chaque couple `(créneau daté, matière)`
+- Le titre suit le format: `Groupe <matière> — <libellé de créneau>`
+- La description contient la liste des participants (nom + pseudo Discord éventuel + niveau)
 
-TODO :
+### Créneaux datés (affichage lisible)
 
-- Mapping NOTION (base de données) avec TALLY.SO (form generator)
-- Affiner le script selon les retours de l'enquête satisfaction.
-- Approfondir la sécurisation et le périmètre d'accès au formulaire.
-- Permettre à chaque volontaire de laisser un commentaire.
-- Définir une charte de conduite dans le cadre des événements liés aux groupes de travail.
-- Permettre à chaque membre de connaître les informations collectées sur lui et d'y avoir accès (conformité réglementaire)
-- Améliorer le formulaire "Esthétique, Logique, Interactivité"
-- Intégrer la génération d'un QR code unique à chaque nouveau formulaire.
-- Associer un système de mailing list afin de cibler uniquement les volontaires (voir définition du périmètre d'accès au formulaire)
-- Générer un rappel automatique ciblé par mail (en PM Discord ?) à 10h30 le jour de chaque session planifiée avec la matière, l'heure, le support et les participants à jour.
+- Les libellés montrent: `Jour JJ/MM HH:MM–HH:MM • Semaine YYYY-WWW • Lieu`
+- Exemple: `Jeudi 12/10 13:00–17:00 • Semaine 2025-W41 • Campus`
+
+## Paramètres ajustables
+
+- `NOM_AGENDA`: nom de l’agenda Google Calendar cible
+- `DEBUT_TITRE_FORM`: préfixe du titre du formulaire (la semaine ISO est ajoutée automatiquement)
+- `MATIERES`: liste des matières proposées
+- `CRENEAUX_DISPONIBLES`: modèle de créneaux projetés sur la semaine (1=lundi … 7=dimanche)
+- `NIVEAUX_AIDE`: échelle de niveau pour la grille
+
+## Limites et évolutions possibles
+
+- IP du répondant: non fournie par Google Forms/Apps Script en `onFormSubmit`. Valeur `N/A` (peut être alimentée via un proxy ou un serveur web avec une redirection) [A implémenter].
+- Collecte d’emails: indispensable pour la règle “une réponse par semaine (écrasable)”.
+- Permissions: l’envoi d’emails (`MailApp`) nécessite l’autorisation lors du premier démarrage.
+
+## Roadmap / TODO
+
+- Mapping Notion (base de données) avec Tally.so
+- Affiner le script selon les retours de l’enquête satisfaction
+- Sécurisation et périmètre d’accès au formulaire
+- Charte de conduite associée aux événements
+- Transparence RGPD: informations accessibles aux volontaires
+- Améliorer le formulaire (esthétique, logique, interactivité)
+- Générer un QR code unique à chaque nouveau formulaire
+- Mailing list pour cibler uniquement les volontaires
+- Rappel automatique ciblé (mail/Discord) le jour des sessions avec infos à jour
