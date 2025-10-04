@@ -58,7 +58,7 @@
 var CONFIG = {
   // 📧 EMAIL DE L'ADMINISTRATEUR (OBLIGATOIRE À MODIFIER)
   // Remplacez par votre adresse email pour recevoir les notifications
-  EMAIL_ADMIN: "anthony.devfsjs@gmail.com", // ⚠️ MODIFIER ICI - Votre email admin
+  EMAIL_ADMIN: " ", // ⚠️ MODIFIER ICI - Votre email admin
 
   // 📅 PARAMÈTRES TEMPORELS
   FUSEAU_HORAIRE: "Europe/Paris", // Fuseau horaire (Europe/Paris, America/New_York, etc.)
