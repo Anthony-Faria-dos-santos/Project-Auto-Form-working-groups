@@ -103,7 +103,7 @@ var CONFIG = {
   // 📊 STRUCTURE DES COLONNES DANS LE SPREADSHEET (25 colonnes au total)
   // Cette structure définit l'ordre des colonnes dans la feuille "Réponses"
   // Chaque numéro correspond à la position de la colonne (1 = A, 2 = B, etc.)
-COLONNES_REPONSES: {
+  COLONNES_REPONSES: {
     // Informations de base
     TIMESTAMP: 1, // Date et heure de la réponse
     EMAIL: 2, // Adresse email de l'étudiant
@@ -220,6 +220,16 @@ COLONNES_REPONSES: {
   },
 
   VERSION: "3.1.0",
+};
+
+// Après la définition de CONFIG
+var SLOT_COLONNE = {
+  JEUDI_CAMPUS: CONFIG.COLONNES_REPONSES.JEUDI_CAMPUS,
+  LUNDI_DISCORD: CONFIG.COLONNES_REPONSES.LUNDI_DISCORD,
+  MARDI_DISCORD: CONFIG.COLONNES_REPONSES.MARDI_DISCORD,
+  MERCREDI_DISCORD: CONFIG.COLONNES_REPONSES.MERCREDI_DISCORD,
+  JEUDI_DISCORD: CONFIG.COLONNES_REPONSES.JEUDI_DISCORD,
+  VENDREDI_DISCORD: CONFIG.COLONNES_REPONSES.VENDREDI_DISCORD,
 };
 
 /**
@@ -3062,6 +3072,287 @@ function GENERER_RAPPORT_HEBDOMADAIRE_() {
  */
 
 /**
+ * Diagnostic complet de la structure CONFIG
+ */
+function DIAGNOSTIC_CONFIG() {
+  Logger.log("🔍 === DIAGNOSTIC CONFIG ===");
+  
+  try {
+    // Test 1: CONFIG existe-t-il ?
+    if (typeof CONFIG === 'undefined') {
+      Logger.log("❌ CONFIG n'est pas défini");
+      return;
+    }
+    Logger.log("✅ CONFIG est défini");
+    
+    // Test 2: CONFIG.COLONNES_REPONSES existe-t-il ?
+    if (typeof CONFIG.COLONNES_REPONSES === 'undefined') {
+      Logger.log("❌ CONFIG.COLONNES_REPONSES n'est pas défini");
+      Logger.log("CONFIG keys: " + Object.keys(CONFIG).join(", "));
+      return;
+    }
+    Logger.log("✅ CONFIG.COLONNES_REPONSES est défini");
+    
+    // Test 3: Les propriétés spécifiques existent-elles ?
+    var props = ['LUNDI_DISCORD', 'MARDI_DISCORD', 'MERCREDI_DISCORD', 'JEUDI_DISCORD', 'VENDREDI_DISCORD'];
+    for (var i = 0; i < props.length; i++) {
+      var prop = props[i];
+      if (typeof CONFIG.COLONNES_REPONSES[prop] === 'undefined') {
+        Logger.log("❌ CONFIG.COLONNES_REPONSES." + prop + " n'est pas défini");
+      } else {
+        Logger.log("✅ CONFIG.COLONNES_REPONSES." + prop + " = " + CONFIG.COLONNES_REPONSES[prop]);
+      }
+    }
+    
+    // Test 4: GET_SLOT_COLONNE_ fonctionne-t-il ?
+    var slotColonne = GET_SLOT_COLONNE_();
+    if (slotColonne === null) {
+      Logger.log("❌ GET_SLOT_COLONNE_() retourne null");
+    } else {
+      Logger.log("✅ GET_SLOT_COLONNE_() fonctionne");
+      Logger.log("Slots disponibles: " + Object.keys(slotColonne).join(", "));
+    }
+    
+  } catch (e) {
+    Logger.log("❌ ERREUR dans le diagnostic: " + e.toString());
+  }
+  
+  Logger.log("🔍 === FIN DIAGNOSTIC ===");
+}
+
+/**
+ * Test simple pour vérifier l'accès aux propriétés CONFIG
+ */
+function TEST_CONFIG_SIMPLE() {
+  Logger.log("🧪 === TEST CONFIG SIMPLE ===");
+  
+  try {
+    Logger.log("Test 1: CONFIG existe ? " + (typeof CONFIG !== 'undefined'));
+    
+    if (typeof CONFIG !== 'undefined') {
+      Logger.log("Test 2: CONFIG.COLONNES_REPONSES existe ? " + (typeof CONFIG.COLONNES_REPONSES !== 'undefined'));
+      
+      if (typeof CONFIG.COLONNES_REPONSES !== 'undefined') {
+        Logger.log("Test 3: LUNDI_DISCORD = " + CONFIG.COLONNES_REPONSES.LUNDI_DISCORD);
+        Logger.log("Test 4: MARDI_DISCORD = " + CONFIG.COLONNES_REPONSES.MARDI_DISCORD);
+        
+        // Test direct de GET_SLOT_COLONNE_
+        var result = GET_SLOT_COLONNE_();
+        Logger.log("Test 5: GET_SLOT_COLONNE_() = " + (result ? "OK" : "NULL"));
+        
+        if (result) {
+          Logger.log("Test 6: LUNDI_DISCORD dans result = " + result.LUNDI_DISCORD);
+        }
+      }
+    }
+    
+  } catch (e) {
+    Logger.log("❌ ERREUR: " + e.toString());
+  }
+  
+  Logger.log("🧪 === FIN TEST ===");
+}
+
+/**
+ * Test spécifique du batch pour identifier le problème de contexte
+ */
+function TEST_BATCH_CONTEXTE() {
+  Logger.log("🧪 === TEST BATCH CONTEXTE ===");
+  
+  try {
+    // Test 1: CONFIG dans le contexte du batch
+    Logger.log("Test 1: CONFIG existe ? " + (typeof CONFIG !== 'undefined'));
+    
+    if (typeof CONFIG !== 'undefined') {
+      Logger.log("Test 2: CONFIG.COLONNES_REPONSES existe ? " + (typeof CONFIG.COLONNES_REPONSES !== 'undefined'));
+      
+      if (typeof CONFIG.COLONNES_REPONSES !== 'undefined') {
+        Logger.log("Test 3: MARDI_DISCORD = " + CONFIG.COLONNES_REPONSES.MARDI_DISCORD);
+        
+        // Test 4: GET_SLOT_COLONNE_ dans le contexte du batch
+        var slotColonne = GET_SLOT_COLONNE_();
+        Logger.log("Test 4: GET_SLOT_COLONNE_() = " + (slotColonne ? "OK" : "NULL"));
+        
+        if (slotColonne) {
+          Logger.log("Test 5: MARDI_DISCORD dans slotColonne = " + slotColonne.MARDI_DISCORD);
+          
+          // Test 6: Accès direct à la propriété
+          Logger.log("Test 6: slotColonne['MARDI_DISCORD'] = " + slotColonne['MARDI_DISCORD']);
+        }
+        
+        // Test 7: Simulation de l'appel qui échoue
+        Logger.log("Test 7: Simulation de l'accès qui échoue...");
+        var testSlot = "MARDI_DISCORD";
+        var colSlot = slotColonne[testSlot];
+        Logger.log("Test 7: colSlot = " + colSlot);
+      }
+    }
+    
+  } catch (e) {
+    Logger.log("❌ ERREUR dans TEST_BATCH_CONTEXTE: " + e.toString());
+    Logger.log("Stack trace: " + e.stack);
+  }
+  
+  Logger.log("🧪 === FIN TEST BATCH ===");
+}
+
+/**
+ * Initialise CONFIG dans le contexte du batch si nécessaire
+ */
+function INITIALISER_CONFIG_BATCH_() {
+  // Si CONFIG n'est pas accessible, on le redéfinit
+  if (typeof CONFIG === 'undefined') {
+    Logger.log("⚠️ CONFIG non accessible, réinitialisation...");
+    
+    // Redéfinition de CONFIG dans le contexte du batch
+    var CONFIG_BATCH = {
+      EMAIL_ADMIN: "anthony.devfsjs@gmail.com",
+      FUSEAU_HORAIRE: "Europe/Paris",
+      HEURE_CREATION_FORM: 9,
+      JOUR_CREATION_FORM: 0,
+      NOM_SPREADSHEET: "📊 Gestion Groupes d'Étude - BACHELORS 3",
+      NOM_CALENDAR: "📅 Sessions Groupe d'Étude",
+      TITRE_FORMULAIRE_PREFIX: "📝 Inscription Semaine",
+      ENVOI_CONFIRMATION_ETUDIANT: true,
+      COULEUR_JEUDI: "9",
+      COULEUR_DISCORD: "11",
+      DISCORD_LINK: "https://discord.com/channels/1414939127643901975/1417186619215315127",
+      ONGLETS: {
+        REPONSES: "Réponses",
+        CRENEAUX: "CRENEAUX",
+        AUDIT: "AUDIT",
+        CONFIG: "CONFIG",
+        ARCHIVE: "ARCHIVE",
+        GROUPES: "GROUPES"
+      },
+      PROPS: {
+        ID_SPREADSHEET: "ID_SPREADSHEET",
+        ID_CALENDAR: "ID_CALENDAR",
+        ID_FORM: "ID_FORM_ACTUEL",
+        SEMAINE_FORM: "SEMAINE_FORM_ACTUEL",
+        VERSION: "VERSION_SYSTEME"
+      },
+      COLONNES_REPONSES: {
+        TIMESTAMP: 1,
+        EMAIL: 2,
+        PRENOM: 3,
+        NOM: 4,
+        NIVEAU: 5,
+        GROUPE: 6,
+        MATIERE1: 7,
+        TYPE1: 8,
+        ACCOMPAGNEMENT1: 9,
+        MATIERE2: 10,
+        TYPE2: 11,
+        ACCOMPAGNEMENT2: 12,
+        MATIERE3: 13,
+        TYPE3: 14,
+        ACCOMPAGNEMENT3: 15,
+        MATIERE4: 16,
+        TYPE4: 17,
+        ACCOMPAGNEMENT4: 18,
+        JEUDI_CAMPUS: 19,
+        LUNDI_DISCORD: 20,
+        MARDI_DISCORD: 21,
+        MERCREDI_DISCORD: 22,
+        JEUDI_DISCORD: 23,
+        VENDREDI_DISCORD: 24,
+        COMMENTAIRE: 25
+      }
+    };
+    
+    // Assignation globale
+    CONFIG = CONFIG_BATCH;
+    Logger.log("✅ CONFIG réinitialisé dans le contexte du batch");
+  } else {
+    Logger.log("✅ CONFIG déjà accessible");
+  }
+}
+
+/**
+ * Force la réinitialisation complète de CONFIG
+ */
+function FORCER_REINITIALISATION_CONFIG() {
+  Logger.log("🔄 === FORÇAGE RÉINITIALISATION CONFIG ===");
+  
+  // Suppression complète de CONFIG
+  if (typeof CONFIG !== 'undefined') {
+    delete CONFIG;
+    Logger.log("🗑️ CONFIG supprimé");
+  }
+  
+  // Redéfinition complète
+  CONFIG = {
+    EMAIL_ADMIN: "anthony.devfsjs@gmail.com",
+    FUSEAU_HORAIRE: "Europe/Paris",
+    HEURE_CREATION_FORM: 9,
+    JOUR_CREATION_FORM: 0,
+    NOM_SPREADSHEET: "📊 Gestion Groupes d'Étude - BACHELORS 3",
+    NOM_CALENDAR: "📅 Sessions Groupe d'Étude",
+    TITRE_FORMULAIRE_PREFIX: "📝 Inscription Semaine",
+    ENVOI_CONFIRMATION_ETUDIANT: true,
+    COULEUR_JEUDI: "9",
+    COULEUR_DISCORD: "11",
+    DISCORD_LINK: "https://discord.com/channels/1414939127643901975/1417186619215315127",
+    ONGLETS: {
+      REPONSES: "Réponses",
+      CRENEAUX: "CRENEAUX",
+      AUDIT: "AUDIT",
+      CONFIG: "CONFIG",
+      ARCHIVE: "ARCHIVE",
+      GROUPES: "GROUPES"
+    },
+    PROPS: {
+      ID_SPREADSHEET: "ID_SPREADSHEET",
+      ID_CALENDAR: "ID_CALENDAR",
+      ID_FORM: "ID_FORM_ACTUEL",
+      SEMAINE_FORM: "SEMAINE_FORM_ACTUEL",
+      VERSION: "VERSION_SYSTEME"
+    },
+    COLONNES_REPONSES: {
+      TIMESTAMP: 1,
+      EMAIL: 2,
+      PRENOM: 3,
+      NOM: 4,
+      NIVEAU: 5,
+      GROUPE: 6,
+      MATIERE1: 7,
+      TYPE1: 8,
+      ACCOMPAGNEMENT1: 9,
+      MATIERE2: 10,
+      TYPE2: 11,
+      ACCOMPAGNEMENT2: 12,
+      MATIERE3: 13,
+      TYPE3: 14,
+      ACCOMPAGNEMENT3: 15,
+      MATIERE4: 16,
+      TYPE4: 17,
+      ACCOMPAGNEMENT4: 18,
+      JEUDI_CAMPUS: 19,
+      LUNDI_DISCORD: 20,
+      MARDI_DISCORD: 21,
+      MERCREDI_DISCORD: 22,
+      JEUDI_DISCORD: 23,
+      VENDREDI_DISCORD: 24,
+      COMMENTAIRE: 25
+    }
+  };
+  
+  Logger.log("✅ CONFIG forcé réinitialisé");
+  Logger.log("Test MARDI_DISCORD: " + CONFIG.COLONNES_REPONSES.MARDI_DISCORD);
+  
+  // Test de GET_SLOT_COLONNE_
+  var slotColonne = GET_SLOT_COLONNE_();
+  if (slotColonne && slotColonne.MARDI_DISCORD) {
+    Logger.log("✅ GET_SLOT_COLONNE_ fonctionne: " + slotColonne.MARDI_DISCORD);
+  } else {
+    Logger.log("❌ GET_SLOT_COLONNE_ ne fonctionne pas");
+  }
+  
+  Logger.log("🔄 === FIN FORÇAGE ===");
+}
+
+/**
  * Génère et envoie la documentation complète
  */
 function GENERER_DOCUMENTATION() {
@@ -3770,6 +4061,19 @@ function OBTENIR_SLOTS_DU_JOUR_(dateJS) {
  * Pour la déduplication, on garde la réponse la plus récente (Horodateur).
  */
 function CHARGER_CANDIDATS_POUR_SLOT_(sheetReponses, slotKey, dateRef) {
+  // Forçage de la réinitialisation de CONFIG
+  FORCER_REINITIALISATION_CONFIG();
+  
+  // Vérification de sécurité CONFIG
+  if (typeof CONFIG === 'undefined') {
+    Logger.log("❌ ERREUR: CONFIG non défini dans CHARGER_CANDIDATS_POUR_SLOT_");
+    return [];
+  }
+  if (typeof CONFIG.COLONNES_REPONSES === 'undefined') {
+    Logger.log("❌ ERREUR: CONFIG.COLONNES_REPONSES non défini dans CHARGER_CANDIDATS_POUR_SLOT_");
+    return [];
+  }
+  
   var data = sheetReponses.getDataRange().getValues();
   if (data.length <= 1) return [];
 
@@ -4266,6 +4570,19 @@ function LANCER_BATCH_MIDI_MANUEL_DATE_() {
  */
 function EXECUTER_BATCH_POUR_DATE_(dateJS) {
   try {
+    // Forçage de la réinitialisation de CONFIG
+    FORCER_REINITIALISATION_CONFIG();
+    
+    // Vérification de sécurité CONFIG
+    if (typeof CONFIG === 'undefined') {
+      Logger.log("❌ ERREUR: CONFIG non défini dans le contexte du batch");
+      return;
+    }
+    if (typeof CONFIG.COLONNES_REPONSES === 'undefined') {
+      Logger.log("❌ ERREUR: CONFIG.COLONNES_REPONSES non défini dans le contexte du batch");
+      return;
+    }
+    
     var tz = CONFIG.FUSEAU_HORAIRE;
     var dateISO = Utilities.formatDate(dateJS, tz, "yyyy-MM-dd");
 
@@ -4279,7 +4596,7 @@ function EXECUTER_BATCH_POUR_DATE_(dateJS) {
       CONFIG.PROPS.ID_SPREADSHEET
     );
     var ss = SpreadsheetApp.openById(ssId);
-    // S’auto-réparer si ADMIN absent
+    // S'auto-réparer si ADMIN absent
     var sheetAdmin = ss.getSheetByName("ADMIN");
     if (!sheetAdmin) {
       sheetAdmin = ss.insertSheet("ADMIN");
@@ -4377,7 +4694,7 @@ function EXECUTER_BATCH_POUR_DATE_(dateJS) {
 }
 
 /**
- * Vérifie l’onglet ADMIN et exécute les actions si cochées, puis décoche.
+ * Vérifie l'onglet ADMIN et exécute les actions si cochées, puis décoche.
  */
 function POLLER_BATCH_ADMIN_() {
   try {
@@ -4392,7 +4709,7 @@ function POLLER_BATCH_ADMIN_() {
     var tz = CONFIG.FUSEAU_HORAIRE;
     var today = new Date();
 
-    // A2: relancer aujourd’hui (case à cocher)
+    // A2: relancer aujourd'hui (case à cocher)
     var relancerAuj = admin.getRange(2, 1).getValue() === true;
     if (relancerAuj) {
       EXECUTER_BATCH_POUR_DATE_(today);
