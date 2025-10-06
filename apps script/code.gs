@@ -166,7 +166,7 @@ COLONNES_REPONSES: {
     "Accompagnement 4",
     "Jeudi Campus",
     "Lundi Discord",
-    "Mardi Discord",
+    "Mardi Discord", 
     "Mercredi Discord",
     "Jeudi Discord",
     "Vendredi Discord",
@@ -2830,76 +2830,6 @@ function NETTOYER_SYSTEME() {
   }
 }
 
-/**
- * Archive les réponses de plus de 12 semaines
- */
-function ARCHIVER_ANCIENNES_REPONSES_() {
-  Logger.log("═══════════════════════════════════════════════════════");
-  Logger.log("📦 ARCHIVAGE DES ANCIENNES RÉPONSES");
-  Logger.log("═══════════════════════════════════════════════════════");
-  
-  try {
-    var props = PropertiesService.getScriptProperties();
-    var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
-    var ss = SpreadsheetApp.openById(ssId);
-    
-    var sheetReponses = ss.getSheetByName(CONFIG.ONGLETS.REPONSES);
-    var sheetArchive = ss.getSheetByName(CONFIG.ONGLETS.ARCHIVE);
-    
-    var data = sheetReponses.getDataRange().getValues();
-    var maintenant = new Date();
-    var limiteArchivage = AJOUTER_JOURS_(maintenant, -84); // 12 semaines
-    
-    var nbArchives = 0;
-    var lignesASupprimer = [];
-    
-    for (var i = data.length - 1; i >= 1; i--) {
-      var timestamp = new Date(data[i][0]);
-      
-      if (timestamp < limiteArchivage) {
-        sheetArchive.appendRow(data[i]);
-        lignesASupprimer.push(i + 1);
-        nbArchives++;
-      }
-    }
-    
-    for (var i = 0; i < lignesASupprimer.length; i++) {
-      sheetReponses.deleteRow(lignesASupprimer[i]);
-    }
-    
-    Logger.log("✅ " + nbArchives + " réponse(s) archivée(s)");
-    
-    if (nbArchives > 0) {
-      var htmlBody = GENERER_EMAIL_HEADER_("Archivage effectué", "📦");
-      
-      htmlBody +=
-        '<div class="card">' +
-        "<h2>📦 Archivage terminé</h2>" +
-        '<div class="info-line">' +
-        '<span class="info-label">Réponses archivées :</span>' +
-        '<span class="info-value success">' +
-        nbArchives +
-        "</span>" +
-        "</div>" +
-        '<div class="info-line">' +
-        '<span class="info-label">Âge minimum :</span>' +
-        '<span class="info-value">&gt; 12 semaines</span>' +
-        "</div>" +
-        '<p style="margin-top: 20px;">Les réponses archivées sont disponibles dans l\'onglet <strong>ARCHIVE</strong> du Spreadsheet.</p>' +
-        "</div>";
-      
-      htmlBody += GENERER_EMAIL_FOOTER_();
-      
-      MailApp.sendEmail({
-        to: CONFIG.EMAIL_ADMIN,
-        subject: "📦 Archivage effectué - " + nbArchives + " réponse(s)",
-        htmlBody: htmlBody,
-      });
-    }
-  } catch (e) {
-    Logger.log("❌ ERREUR : " + e.toString());
-  }
-}
 
 /**
  * Génère un rapport hebdomadaire des statistiques
@@ -3139,102 +3069,178 @@ function GENERER_DOCUMENTATION() {
   
   var htmlBody = GENERER_EMAIL_HEADER_("Documentation système", "📚");
   
-  htmlBody +=
-    '<div class="card">' +
-    "<h2>📚 Documentation complète</h2>" +
-    "<p>Version <strong>" +
-    CONFIG.VERSION +
-    "</strong></p>" +
-    "<p>Voici la documentation complète du système de gestion des groupes d'étude.</p>" +
-    "</div>";
-
-  htmlBody +=
-    '<div class="card">' +
-    "<h2>🚀 Installation</h2>" +
-    "<ol>" +
-    "<li>Modifier <code>CONFIG.EMAIL_ADMIN</code> dans le code</li>" +
-    "<li>Exécuter <code>CONFIG_INITIALE()</code></li>" +
-    "<li>Exécuter <code>DEMARRER_SYSTEME()</code></li>" +
-    "<li>Exécuter <code>TEST_COMPLET()</code></li>" +
-    "</ol>" +
-    "</div>";
-
-  htmlBody +=
-    '<div class="card">' +
-    "<h2>⚙️ Fonctions principales</h2>" +
+  htmlBody += '<div class="card">' +
+    '<h2>📚 Documentation complète</h2>' +
+    '<p>Version <strong>' + CONFIG.VERSION + '</strong></p>' +
+    '<p>Voici la documentation complète du système de gestion des groupes d\'étude.</p>' +
+    '</div>';
+  
+  htmlBody += '<div class="card">' +
+    '<h2>🚀 PROCÉDURE D\'INSTALLATION</h2>' +
+    '<h3>Étape 1 : Configuration initiale</h3>' +
+    '<ol>' +
+    '<li>Ouvrir Apps Script</li>' +
+    '<li>Modifier <code>CONFIG.EMAIL_ADMIN</code> (ligne 50) avec votre email</li>' +
+    '<li>Exécuter <code>CONFIG_INITIALE()</code></li>' +
+    '<li>Autoriser les permissions demandées</li>' +
+    '</ol>' +
+    '<h3>Étape 2 : Démarrage du système</h3>' +
+    '<ol>' +
+    '<li>Exécuter <code>DEMARRER_SYSTEME()</code></li>' +
+    '<li>Exécuter <code>TEST_COMPLET()</code></li>' +
+    '<li>Vérifier que tous les tests passent</li>' +
+    '</ol>' +
+    '<h3>Étape 3 : Activation</h3>' +
+    '<ol>' +
+    '<li>Partager le lien du formulaire aux étudiants</li>' +
+    '<li>Le système fonctionne automatiquement</li>' +
+    '</ol>' +
+    '</div>';
+  
+  htmlBody += '<div class="card">' +
+    '<h2>⚙️ FONCTIONS DE MAINTENANCE</h2>' +
+    '<h3>🔧 Fonctions principales</h3>' +
     '<div class="matiere-item">' +
-    "<strong>CONFIG_INITIALE()</strong><br>" +
-    "Crée le Spreadsheet et le Calendar. À exécuter une seule fois." +
-    "</div>" +
+    '<strong>CONFIG_INITIALE()</strong><br>' +
+    'Crée le Spreadsheet et le Calendar. À exécuter une seule fois.' +
+    '</div>' +
     '<div class="matiere-item">' +
-    "<strong>DEMARRER_SYSTEME()</strong><br>" +
-    "Crée le premier formulaire et installe les triggers automatiques." +
-    "</div>" +
+    '<strong>DEMARRER_SYSTEME()</strong><br>' +
+    'Crée le premier formulaire et installe les triggers automatiques.' +
+    '</div>' +
     '<div class="matiere-item">' +
-    "<strong>TEST_COMPLET()</strong><br>" +
-    "Vérifie que tous les composants fonctionnent correctement." +
-    "</div>" +
+    '<strong>TEST_COMPLET()</strong><br>' +
+    'Vérifie que tous les composants fonctionnent correctement.' +
+    '</div>' +
     '<div class="matiere-item">' +
-    "<strong>NETTOYER_SYSTEME()</strong><br>" +
-    "⚠️ ATTENTION : Supprime tout et réinitialise le système." +
-    "</div>" +
-    "</div>";
-
-  htmlBody +=
-    '<div class="card">' +
-    "<h2>📊 Fonctions de rapport</h2>" +
+    '<strong>NETTOYER_SYSTEME()</strong><br>' +
+    '⚠️ ATTENTION : Supprime tout et réinitialise le système.' +
+    '</div>' +
+    '</div>';
+  
+  htmlBody += '<div class="card">' +
+    '<h3>📊 Fonctions de rapport</h3>' +
     '<div class="matiere-item">' +
-    "<strong>GENERER_RAPPORT_HEBDOMADAIRE_()</strong><br>" +
-    "Génère un rapport statistique complet." +
-    "</div>" +
+    '<strong>GENERER_RAPPORT_HEBDOMADAIRE_()</strong><br>' +
+    'Génère un rapport statistique complet.' +
+    '</div>' +
     '<div class="matiere-item">' +
-    "<strong>ARCHIVER_ANCIENNES_REPONSES_()</strong><br>" +
-    "Archive les réponses de plus de 12 semaines." +
-    "</div>" +
-    "</div>";
-
-  htmlBody +=
-    '<div class="card">' +
-    "<h2>⏰ Automatisations</h2>" +
-    "<ul>" +
-    "<li><strong>Dimanche 9h :</strong> Création automatique du formulaire de la semaine</li>" +
-    "<li><strong>À l'inscription :</strong> Traitement immédiat et création des événements Calendar</li>" +
-    "<li><strong>Hebdomadaire :</strong> Génération de rapports statistiques (optionnel)</li>" +
-    "</ul>" +
-    "</div>";
-
-  htmlBody +=
-    '<div class="card">' +
-    "<h2>📚 Nouvelles fonctionnalités v3.1.0</h2>" +
-    "<ul>" +
-    "<li>✅ 12 matières disponibles</li>" +
-    "<li>✅ Choix entre Révisions et Devoirs</li>" +
-    "<li>✅ Niveaux obligatoires : B3 ou B3+L</li>" +
-    "<li>✅ Groupes obligatoires : L3A, L3B, L3C</li>" +
-    "<li>✅ Prénom et nom réels obligatoires</li>" +
-    "<li>✅ Emails HTML professionnels</li>" +
-    "<li>✅ Rapports statistiques détaillés</li>" +
-    "</ul>" +
-    "</div>";
-
-  htmlBody +=
-    '<div class="card">' +
-    "<h2>🆘 Support</h2>" +
-    "<p>En cas de problème :</p>" +
-    "<ol>" +
-    "<li>Vérifier les logs (Ctrl+Enter dans Apps Script)</li>" +
-    "<li>Exécuter <code>TEST_COMPLET()</code></li>" +
-    "<li>Consulter l'onglet AUDIT du Spreadsheet</li>" +
-    "<li>Contacter l'administrateur</li>" +
-    "</ol>" +
-    "</div>";
+    '<strong>GENERER_DOCUMENTATION()</strong><br>' +
+    'Génère et envoie cette documentation.' +
+    '</div>' +
+    '</div>';
+  
+  htmlBody += '<div class="card">' +
+    '<h3>🛠️ Fonctions de maintenance manuelle</h3>' +
+    '<div class="matiere-item">' +
+    '<strong>LANCER_BATCH_MIDI_MANUEL_AUJOURDHUI_()</strong><br>' +
+    'Lance manuellement le batch de planification pour aujourd\'hui.' +
+    '</div>' +
+    '<div class="matiere-item">' +
+    '<strong>LANCER_BATCH_MIDI_MANUEL_DATE_()</strong><br>' +
+    'Lance manuellement le batch pour une date spécifique.' +
+    '</div>' +
+    '<div class="matiere-item">' +
+    '<strong>CREER_FORMULAIRE_SEMAINE_ACTUELLE_()</strong><br>' +
+    'Crée manuellement le formulaire pour la semaine en cours.' +
+    '</div>' +
+    '<div class="matiere-item">' +
+    '<strong>INSTALLER_TRIGGERS_()</strong><br>' +
+    'Réinstalle tous les triggers automatiques.' +
+    '</div>' +
+    '</div>';
+  
+  htmlBody += '<div class="card">' +
+    '<h2>🔍 PROCÉDURES DE DIAGNOSTIC</h2>' +
+    '<h3>Problème : Aucun groupe formé</h3>' +
+    '<ol>' +
+    '<li>Exécuter <code>TEST_COMPLET()</code> pour vérifier l\'état</li>' +
+    '<li>Vérifier l\'onglet "Réponses" : y a-t-il des données ?</li>' +
+    '<li>Exécuter <code>LANCER_BATCH_MIDI_MANUEL_AUJOURDHUI_()</code></li>' +
+    '<li>Consulter les logs pour voir les erreurs</li>' +
+    '<li>Vérifier que les participants ont coché "Oui" pour les créneaux</li>' +
+    '</ol>' +
+    '<h3>Problème : Erreurs d\'email</h3>' +
+    '<ol>' +
+    '<li>Vérifier <code>CONFIG.EMAIL_ADMIN</code> est correct</li>' +
+    '<li>Consulter les logs pour "Service invoked too many times"</li>' +
+    '<li>Attendre le lendemain ou utiliser <code>TEST_SANS_EMAILS()</code></li>' +
+    '</ol>' +
+    '<h3>Problème : Triggers non fonctionnels</h3>' +
+    '<ol>' +
+    '<li>Apps Script > Déclencheurs</li>' +
+    '<li>Vérifier que les triggers sont présents</li>' +
+    '<li>Exécuter <code>INSTALLER_TRIGGERS_()</code> si nécessaire</li>' +
+    '</ol>' +
+    '<h3>Problème : Formulaire non créé</h3>' +
+    '<ol>' +
+    '<li>Exécuter <code>CREER_FORMULAIRE_SEMAINE_ACTUELLE_()</code></li>' +
+    '<li>Vérifier les permissions du script</li>' +
+    '<li>Consulter les logs d\'erreur</li>' +
+    '</ol>' +
+    '</div>';
+  
+  htmlBody += '<div class="card">' +
+    '<h2>🆘 CAS D\'URGENCE</h2>' +
+    '<h3>Reset complet du système</h3>' +
+    '<ol>' +
+    '<li>⚠️ <strong>NETTOYER_SYSTEME()</strong> - Supprime tout</li>' +
+    '<li>Exécuter <code>CONFIG_INITIALE()</code></li>' +
+    '<li>Exécuter <code>DEMARRER_SYSTEME()</code></li>' +
+    '<li>Exécuter <code>TEST_COMPLET()</code></li>' +
+    '</ol>' +
+    '<h3>Récupération après erreur</h3>' +
+    '<ol>' +
+    '<li>Consulter l\'onglet AUDIT du Spreadsheet</li>' +
+    '<li>Identifier la dernière action réussie</li>' +
+    '<li>Relancer les fonctions manquantes</li>' +
+    '<li>Vérifier avec <code>TEST_COMPLET()</code></li>' +
+    '</ol>' +
+    '</div>';
+  
+  htmlBody += '<div class="card">' +
+    '<h2>⏰ AUTOMATISATIONS</h2>' +
+    '<ul>' +
+    '<li><strong>Dimanche 9h :</strong> Création automatique du formulaire de la semaine</li>' +
+    '<li><strong>À l\'inscription :</strong> Traitement immédiat et création des événements Calendar</li>' +
+    '<li><strong>Lundi-Vendredi 12h :</strong> Planification automatique des groupes</li>' +
+    '<li><strong>Hebdomadaire :</strong> Génération de rapports statistiques (optionnel)</li>' +
+    '</ul>' +
+    '</div>';
+  
+  htmlBody += '<div class="card">' +
+    '<h2>📚 FONCTIONNALITÉS v3.1.0</h2>' +
+    '<ul>' +
+    '<li>✅ 12 matières disponibles</li>' +
+    '<li>✅ Choix entre Révisions et Devoirs</li>' +
+    '<li>✅ Niveaux obligatoires : B3 ou B3+L</li>' +
+    '<li>✅ Groupes obligatoires : L3A, L3B, L3C</li>' +
+    '<li>✅ Prénom et nom réels obligatoires</li>' +
+    '<li>✅ Emails HTML professionnels</li>' +
+    '<li>✅ Rapports statistiques détaillés</li>' +
+    '<li>✅ Invitations Calendar personnalisées</li>' +
+    '<li>✅ Diagnostic détaillé des erreurs</li>' +
+    '</ul>' +
+    '</div>';
+  
+  htmlBody += '<div class="card">' +
+    '<h2>🆘 SUPPORT</h2>' +
+    '<p>En cas de problème :</p>' +
+    '<ol>' +
+    '<li>Vérifier les logs (Ctrl+Enter dans Apps Script)</li>' +
+    '<li>Exécuter <code>TEST_COMPLET()</code></li>' +
+    '<li>Consulter l\'onglet AUDIT du Spreadsheet</li>' +
+    '<li>Utiliser les procédures de diagnostic ci-dessus</li>' +
+    '<li>Contacter l\'administrateur</li>' +
+    '</ol>' +
+    '</div>';
   
   htmlBody += GENERER_EMAIL_FOOTER_();
   
   MailApp.sendEmail({
     to: CONFIG.EMAIL_ADMIN,
     subject: "📚 Documentation système v" + CONFIG.VERSION,
-    htmlBody: htmlBody,
+    htmlBody: htmlBody
   });
   
   Logger.log("✅ Documentation envoyée");
@@ -3707,6 +3713,22 @@ function GENERER_DESCRIPTION_EVENEMENT_(participants, subject) {
  * Permet de savoir quelle colonne de Réponses correspond à quel créneau.
  * =====================================================================*/
 function GET_SLOT_COLONNE_() {
+  // Vérification de sécurité
+  if (!CONFIG) {
+    Logger.log("❌ ERREUR: CONFIG non défini");
+    return null;
+  }
+  if (!CONFIG.COLONNES_REPONSES) {
+    Logger.log("❌ ERREUR: CONFIG.COLONNES_REPONSES non défini");
+    Logger.log("CONFIG keys: " + Object.keys(CONFIG).join(", "));
+    return null;
+  }
+  if (!CONFIG.COLONNES_REPONSES.LUNDI_DISCORD) {
+    Logger.log("❌ ERREUR: CONFIG.COLONNES_REPONSES.LUNDI_DISCORD non défini");
+    Logger.log("COLONNES_REPONSES keys: " + Object.keys(CONFIG.COLONNES_REPONSES).join(", "));
+    return null;
+  }
+  
   return {
     JEUDI_CAMPUS: CONFIG.COLONNES_REPONSES.JEUDI_CAMPUS,
     LUNDI_DISCORD: CONFIG.COLONNES_REPONSES.LUNDI_DISCORD,
@@ -3762,6 +3784,7 @@ function CHARGER_CANDIDATS_POUR_SLOT_(sheetReponses, slotKey, dateRef) {
   var SLOT_COLONNE = GET_SLOT_COLONNE_();
   if (!SLOT_COLONNE) {
     Logger.log("[Diag] ERREUR: SLOT_COLONNE n'est pas défini !");
+    Logger.log("[Diag] Vérifiez que CONFIG est correctement initialisé");
     return [];
   }
   
