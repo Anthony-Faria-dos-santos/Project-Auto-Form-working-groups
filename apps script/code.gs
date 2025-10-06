@@ -103,7 +103,7 @@ var CONFIG = {
   // 📊 STRUCTURE DES COLONNES DANS LE SPREADSHEET (25 colonnes au total)
   // Cette structure définit l'ordre des colonnes dans la feuille "Réponses"
   // Chaque numéro correspond à la position de la colonne (1 = A, 2 = B, etc.)
-  COLONNES_REPONSES: {
+COLONNES_REPONSES: {
     // Informations de base
     TIMESTAMP: 1, // Date et heure de la réponse
     EMAIL: 2, // Adresse email de l'étudiant
@@ -3154,6 +3154,14 @@ function TEST_CONFIG_SIMPLE() {
 }
 
 /**
+ * TEST BATCH AVEC NOUVEAU CODE (force rechargement)
+ */
+function TEST_BATCH_NOUVEAU() {
+  Logger.log("🧪 TEST BATCH AVEC CORRECTIONS");
+  LANCER_BATCH_MIDI_MANUEL_AUJOURDHUI_();
+}
+
+/**
  * Test spécifique du batch pour identifier le problème de contexte
  */
 function TEST_BATCH_CONTEXTE() {
@@ -3308,6 +3316,50 @@ function FORCER_REINITIALISATION_CONFIG() {
       ID_FORM: "ID_FORM_ACTUEL",
       SEMAINE_FORM: "SEMAINE_FORM_ACTUEL",
       VERSION: "VERSION_SYSTEME"
+    },
+    CRENEAUX: {
+      JEUDI_CAMPUS: {
+        nom: "Jeudi après-midi (Campus)",
+        debut: 13,
+        fin: 17,
+        jour: 4,
+        lieu: "Campus"
+      },
+      LUNDI_DISCORD: {
+        nom: "Lundi soir (Discord)",
+        debut: 16.75,
+        fin: 19,
+        jour: 1,
+        lieu: "Discord"
+      },
+      MARDI_DISCORD: {
+        nom: "Mardi soir (Discord)",
+        debut: 16.75,
+        fin: 19,
+        jour: 2,
+        lieu: "Discord"
+      },
+      MERCREDI_DISCORD: {
+        nom: "Mercredi soir (Discord)",
+        debut: 16.75,
+        fin: 19,
+        jour: 3,
+        lieu: "Discord"
+      },
+      JEUDI_DISCORD: {
+        nom: "Jeudi soir (Discord)",
+        debut: 16.75,
+        fin: 19,
+        jour: 4,
+        lieu: "Discord"
+      },
+      VENDREDI_DISCORD: {
+        nom: "Vendredi soir (Discord)",
+        debut: 16.75,
+        fin: 19,
+        jour: 5,
+        lieu: "Discord"
+      }
     },
     COLONNES_REPONSES: {
       TIMESTAMP: 1,
