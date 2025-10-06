@@ -30,6 +30,8 @@ var CONFIG = {
   NOM_SPREADSHEET: "📊 Gestion Groupes d'Étude - BACHELORS 3", // Nom du fichier Google Sheets
   NOM_CALENDAR: "📅 Sessions Groupe d'Étude", // Nom du calendrier Google
   TITRE_FORMULAIRE_PREFIX: "📝 Inscription Semaine", // Préfixe du titre des formulaires
+  // 📧 Politique d'envoi
+  ENVOI_CONFIRMATION_ETUDIANT: true, // true: email de confirmation envoyé à la soumission
 
   // 🎨 COULEURS DES ÉVÉNEMENTS CALENDRIER (1-11)
   // Chaque couleur correspond à un type d'événement
@@ -1015,7 +1017,7 @@ function DEMARRER_SYSTEME() {
     for (var j = 0; j < triggersHebdo.length; j++) {
       if (
         triggersHebdo[j].getHandlerFunction() ===
-        "CREER_NOUVEAU_FORMULAIRE_HEBDO_"
+        "CREER_FORMULAIRE_HEBDO_"
       ) {
         ScriptApp.deleteTrigger(triggersHebdo[j]);
         Logger.log("  🗑️ Ancien trigger hebdo supprimé");
@@ -1023,7 +1025,7 @@ function DEMARRER_SYSTEME() {
     }
     
     // Créer le nouveau trigger hebdomadaire (dimanche 9h)
-    ScriptApp.newTrigger("CREER_NOUVEAU_FORMULAIRE_HEBDO_")
+    ScriptApp.newTrigger("CREER_FORMULAIRE_HEBDO_")
       .timeBased()
       .onWeekDay(ScriptApp.WeekDay.SUNDAY)
       .atHour(CONFIG.HEURE_CREATION_FORM)
@@ -1275,14 +1277,28 @@ function CREER_FORMULAIRE_HEBDO_() {
   
   try {
     var maintenant = new Date();
-    var lundiProchain = AJOUTER_JOURS_(
-      maintenant,
-      (8 - maintenant.getDay()) % 7
-    );
-    
+    // Générer le formulaire pour la semaine suivante (dimanche 9h)
+    var lundiProchain = OBTENIR_LUNDI_SEMAINE_(AJOUTER_JOURS_(maintenant, 1));
     var formId = CREER_FORMULAIRE_SEMAINE_(lundiProchain);
     
     Logger.log("✅ Formulaire hebdomadaire créé : " + formId);
+
+    // Notification admin avec lien du formulaire
+    var form = FormApp.openById(formId);
+    var infoSemaine = CALCULER_SEMAINE_ISO_(lundiProchain);
+    var htmlBody = GENERER_EMAIL_HEADER_("Formulaire hebdo créé", "📝");
+    htmlBody +=
+      '<div class="card">' +
+      '<div class="info-line"><span class="info-label">Semaine :</span><span class="info-value">' + infoSemaine.annee + 'W' + ZERO_PAD_(infoSemaine.semaine) + '</span></div>' +
+      '<div class="info-line"><span class="info-label">Titre :</span><span class="info-value">' + form.getTitle() + '</span></div>' +
+      '<div class="info-line"><span class="info-label">URL :</span><span class="info-value"><a href="' + form.getPublishedUrl() + '">Ouvrir le formulaire</a></span></div>' +
+      '</div>';
+    htmlBody += GENERER_EMAIL_FOOTER_();
+    MailApp.sendEmail({
+      to: CONFIG.EMAIL_ADMIN,
+      subject: "📝 Formulaire hebdomadaire disponible",
+      htmlBody: htmlBody,
+    });
   } catch (e) {
     Logger.log("❌ ERREUR : " + e.toString());
     
@@ -1709,26 +1725,27 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
       creneauxChoisis.push("Vendredi soir (Discord) - 16h45-19h");
     }
     
-    // === ENVOYER EMAIL DE CONFIRMATION ===
-    
-    ENVOYER_EMAIL_CONFIRMATION_(
-      email,
-      prenom,
-      nom,
-      niveau,
-      groupe,
-      matiere1,
-      type1,
-      matiere2,
-      type2,
-      matiere3,
-      type3,
-      matiere4,
-      type4,
-      creneauxChoisis,
-      modeReplace,
-      numSemaine
-    );
+    // === ENVOI EMAIL ÉTUDIANT (désactivable) ===
+    if (CONFIG.ENVOI_CONFIRMATION_ETUDIANT) {
+      ENVOYER_EMAIL_CONFIRMATION_(
+        email,
+        prenom,
+        nom,
+        niveau,
+        groupe,
+        matiere1,
+        type1,
+        matiere2,
+        type2,
+        matiere3,
+        type3,
+        matiere4,
+        type4,
+        creneauxChoisis,
+        modeReplace,
+        numSemaine
+      );
+    }
     
     // === NOTIFIER L'ADMIN ===
     
