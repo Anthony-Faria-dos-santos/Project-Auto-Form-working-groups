@@ -3162,6 +3162,55 @@ function TEST_BATCH_NOUVEAU() {
 }
 
 /**
+ * TEST BATCH POUR LUNDI (où il y a 3 personnes disponibles)
+ */
+function TEST_BATCH_LUNDI() {
+  Logger.log("🧪 TEST BATCH POUR LUNDI 6 OCTOBRE");
+  
+  // Créer une date pour lundi 6 octobre 2025
+  var lundi = new Date(2025, 9, 6); // Mois 9 = octobre (0-indexé)
+  
+  Logger.log("📅 Date testée : " + lundi);
+  EXECUTER_BATCH_POUR_DATE_(lundi);
+}
+
+/**
+ * DIAGNOSTIC DES DONNÉES RÉELLES DU SPREADSHEET
+ */
+function DIAGNOSTIC_DONNEES_REELLES() {
+  Logger.log("🔍 === DIAGNOSTIC DES DONNÉES RÉELLES ===");
+  
+  var props = PropertiesService.getScriptProperties();
+  var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
+  var ss = SpreadsheetApp.openById(ssId);
+  var sheet = ss.getSheetByName(CONFIG.ONGLETS.REPONSES);
+  
+  var data = sheet.getDataRange().getValues();
+  Logger.log("📊 Total lignes (incluant header) : " + data.length);
+  
+  for (var i = 1; i < data.length; i++) {
+    Logger.log("\n--- Ligne " + i + " ---");
+    Logger.log("Horodateur : " + data[i][0]);
+    Logger.log("Email : " + data[i][1]);
+    Logger.log("Prénom : " + data[i][2]);
+    Logger.log("Nom : " + data[i][3]);
+    Logger.log("Matière 1 : " + data[i][6]);
+    Logger.log("Lundi Discord : " + data[i][19]);
+    Logger.log("Mardi Discord : " + data[i][20]);
+    
+    // Test de parsing de la date
+    try {
+      var timestamp = PARSE_TIMESTAMP_(data[i][0], CONFIG.FUSEAU_HORAIRE);
+      Logger.log("✅ Date parsée : " + timestamp);
+    } catch (e) {
+      Logger.log("❌ Erreur parsing date : " + e);
+    }
+  }
+  
+  Logger.log("\n🔍 === FIN DIAGNOSTIC ===");
+}
+
+/**
  * AJOUTE RAPIDEMENT 3 PARTICIPANTS DE TEST
  */
 function AJOUTER_PARTICIPANTS_TEST() {
@@ -4792,8 +4841,17 @@ function EXECUTER_BATCH_POUR_DATE_(dateJS) {
       
       // Vérification : ne traiter que s'il y a des groupes
       if (groupes.length === 0) {
-        resume += "<p><em>Aucun groupe formé (besoin de minimum 2 participants)</em></p>";
-        Logger.log("[Diag] " + slotKey + ": Aucun groupe formé - candidats insuffisants");
+        var raisonMessage = "";
+        if (candidats.length === 0) {
+          raisonMessage = "Aucun participant disponible pour ce créneau";
+        } else if (candidats.length === 1) {
+          raisonMessage = "1 seul participant (minimum 2 requis) : " + candidats[0].prenom + " " + candidats[0].nom;
+        } else {
+          raisonMessage = candidats.length + " participants mais aucune matière commune";
+        }
+        
+        resume += "<p><em>❌ Aucun groupe formé : " + raisonMessage + "</em></p>";
+        Logger.log("ℹ️ " + slotKey + ": Aucun groupe formé - " + raisonMessage);
       }
       
       groupes.forEach(function (g, idx) {
@@ -4822,9 +4880,32 @@ function EXECUTER_BATCH_POUR_DATE_(dateJS) {
     resume += "</div>";
     NOTIFIER_ADMIN_GROUPES_JOUR_(resume, dateISO);
     ECRIRE_AUDIT_("BATCH_MANUEL_OK", { date: dateISO, slots: slots.length });
+    
+    // Message de fin selon les résultats
+    Logger.log("✅ Batch terminé avec succès pour " + dateISO);
+    
   } catch (e) {
-    Logger.log("❌ Batch manuel error: " + e);
+    Logger.log("❌ Batch error: " + e);
+    Logger.log("📝 Stack trace: " + (e.stack || "N/A"));
     ECRIRE_AUDIT_("BATCH_MANUEL_ERR", e.toString());
+    
+    // Message d'erreur clair pour l'utilisateur
+    try {
+      MailApp.sendEmail({
+        to: CONFIG.EMAIL_ADMIN,
+        subject: "❌ Erreur batch " + dateISO,
+        htmlBody: GENERER_EMAIL_HEADER_("Erreur batch", "❌") +
+          '<div class="card">' +
+          '<h2>❌ Erreur lors du batch</h2>' +
+          '<p><strong>Date :</strong> ' + dateISO + '</p>' +
+          '<p><strong>Erreur :</strong> ' + e.toString() + '</p>' +
+          '<p>Consultez les logs Apps Script pour plus de détails.</p>' +
+          '</div>' +
+          GENERER_EMAIL_FOOTER_()
+      });
+    } catch (emailErr) {
+      Logger.log("⚠️ Impossible d'envoyer l'email d'erreur : " + emailErr);
+    }
   }
 }
 
