@@ -4400,7 +4400,7 @@ function FORMER_GROUPES_POUR_SLOT_(candidats) {
   });
 
   // Gestion des restants
-  if (restants.length === 1) {
+  if (restants.length === 1 && groupes.length > 0) {
     var iso = restants[0];
     // trouver le groupe avec plus d'affinités sinon plus petit
     var bestIdx = 0;
