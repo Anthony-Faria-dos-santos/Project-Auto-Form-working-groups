@@ -3701,22 +3701,20 @@ function GENERER_DESCRIPTION_EVENEMENT_(participants, subject) {
   return description;
 }
 
-/** =====================================================================
+/**
+ * =====================================================================
  * SLOT → COLONNE Spreadsheet (réponses Oui/Non)
  * Permet de savoir quelle colonne de Réponses correspond à quel créneau.
  * =====================================================================*/
-var SLOT_COLONNE = {
-  JEUDI_CAMPUS: CONFIG.COLONNES_REPONSES.JEUDI_CAMPUS,
-  LUNDI_DISCORD: CONFIG.COLONNES_REPONSES.LUNDI_DISCORD,
-  MARDI_DISCORD: CONFIG.COLONNES_REPONSES.MARDI_DISCORD,
-  MERCREDI_DISCORD: CONFIG.COLONNES_REPONSES.MERCREDI_DISCORD,
-  JEUDI_DISCORD: CONFIG.COLONNES_REPONSES.JEUDI_DISCORD,
-  VENDREDI_DISCORD: CONFIG.COLONNES_REPONSES.VENDREDI_DISCORD,
-};
-
-// Vérification que SLOT_COLONNE est bien défini
-if (typeof SLOT_COLONNE === 'undefined') {
-  Logger.log("❌ ERREUR: SLOT_COLONNE n'est pas défini !");
+function GET_SLOT_COLONNE_() {
+  return {
+    JEUDI_CAMPUS: CONFIG.COLONNES_REPONSES.JEUDI_CAMPUS,
+    LUNDI_DISCORD: CONFIG.COLONNES_REPONSES.LUNDI_DISCORD,
+    MARDI_DISCORD: CONFIG.COLONNES_REPONSES.MARDI_DISCORD,
+    MERCREDI_DISCORD: CONFIG.COLONNES_REPONSES.MERCREDI_DISCORD,
+    JEUDI_DISCORD: CONFIG.COLONNES_REPONSES.JEUDI_DISCORD,
+    VENDREDI_DISCORD: CONFIG.COLONNES_REPONSES.VENDREDI_DISCORD,
+  };
 }
 
 /**
@@ -3761,7 +3759,8 @@ function CHARGER_CANDIDATS_POUR_SLOT_(sheetReponses, slotKey, dateRef) {
   Logger.log("[Diag] Mode: traiter TOUTES les réponses (pas de filtre par date d'inscription)");
 
   // Vérification de sécurité
-  if (typeof SLOT_COLONNE === 'undefined') {
+  var SLOT_COLONNE = GET_SLOT_COLONNE_();
+  if (!SLOT_COLONNE) {
     Logger.log("[Diag] ERREUR: SLOT_COLONNE n'est pas défini !");
     return [];
   }
