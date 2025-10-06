@@ -1,50 +1,11 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════
- * 📚 SYSTÈME DE GESTION AUTOMATISÉE DES GROUPES D'ÉTUDE
+ * SYSTÈME D'ORGANISATION DE GROUPES D'ÉTUDE (Apps Script)
  * ═══════════════════════════════════════════════════════════════════════
- *
- * 🎯 OBJECTIF DU PROJET
- * Automatiser l'organisation des groupes de travail pour les étudiants
- * en générant des formulaires hebdomadaires et en créant des événements
- * calendrier basés sur les inscriptions.
- *
- * 👨‍💻 AUTEUR
- * Anthony F. - Développeur du système
- * https://github.com/Anthony-Faria-dos-santos
- * Si tu a aimé ce projet, lâche une ⭐️ sur mon repo 😉 🙏🏼
- *
- * 📅 VERSION
- * 3.1.0 - Version stable avec emails HTML et gestion avancée
- *
- * 🚀 FONCTIONNALITÉS PRINCIPALES
- * • Génération automatique de formulaires chaque dimanche à 9h
- * • Gestion intelligente des inscriptions (remplacement des anciennes)
- * • Création automatique d'événements Google Calendar
- * • Formation de groupes basée sur les matières et disponibilités
- * • Système d'audit complet pour le suivi des actions
- * • Notifications email HTML professionnelles
- *
- * 🛠️ INSTALLATION RAPIDE
- * 1. Copier ce code dans un nouveau projet Google Apps Script
- * 2. Modifier CONFIG.EMAIL_ADMIN avec votre adresse email
- * 3. Exécuter CONFIG_INITIALE() pour la première configuration
- * 4. Exécuter DEMARRER_SYSTEME() pour lancer le système
- * 5. Exécuter TEST_COMPLET() pour vérifier le fonctionnement
- *
- * ⚠️ IMPORTANT POUR LES DÉBUTANTS
- * Ce script utilise JavaScript ES5 (pas de ES6 moderne)
- * Toutes les variables sont déclarées avec 'var' (pas 'let' ou 'const')
- * Les fonctions sont déclarées avec 'function' (pas d'arrow functions)
- *
- * 📖 COMMENT UTILISER CE SCRIPT
- * Le script se divise en sections logiques :
- * 1. CONFIGURATION - Paramètres à modifier selon vos besoins
- * 2. FONCTIONS UTILITAIRES - Outils de base pour le script
- * 3. GESTION DES FORMULAIRES - Création et traitement des formulaires
- * 4. GESTION DU CALENDRIER - Création des événements
- * 5. ENVOI D'EMAILS - Notifications aux utilisateurs
- * 6. FONCTIONS PRINCIPALES - Orchestration du système
- * 7. FONCTIONS DE TEST - Vérification du bon fonctionnement
+ * Objectif: formulaire hebdo, regroupement quotidien (12h), Agenda et emails.
+ * Auteur: Anthony F. — https://github.com/Anthony-Faria-dos-santos — v3.1.0
+ * Installation: 1) CONFIG.EMAIL_ADMIN  2) CONFIG_INITIALE()  3) DEMARRER_SYSTEME()
+ * Notes: ES5 (var/function), 25 colonnes standard dans "Réponses".
  */
 
 /**
@@ -137,7 +98,7 @@ var CONFIG = {
   // 📊 STRUCTURE DES COLONNES DANS LE SPREADSHEET (25 colonnes au total)
   // Cette structure définit l'ordre des colonnes dans la feuille "Réponses"
   // Chaque numéro correspond à la position de la colonne (1 = A, 2 = B, etc.)
-  COLONNES_REPONSES: {
+COLONNES_REPONSES: {
     // Informations de base
     TIMESTAMP: 1, // Date et heure de la réponse
     EMAIL: 2, // Adresse email de l'étudiant
@@ -206,7 +167,7 @@ var CONFIG = {
     "Vendredi Discord",
     "Commentaire (optionnel)",
   ],
-
+  
   // ⏰ Créneaux disponibles
   CRENEAUX: {
     JEUDI_CAMPUS: {
@@ -372,10 +333,10 @@ function CONFIG_INITIALE() {
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("🚀 CONFIGURATION INITIALE DU SYSTÈME");
   Logger.log("═══════════════════════════════════════════════════════");
-
+  
   try {
     var props = PropertiesService.getScriptProperties();
-
+    
     // Vérifier si déjà configuré
     var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
     if (ssId) {
@@ -383,7 +344,7 @@ function CONFIG_INITIALE() {
       Logger.log("📊 Spreadsheet ID : " + ssId);
       Logger.log("");
       Logger.log("💡 Pour reconfigurer, exécutez d'abord : NETTOYER_SYSTEME()");
-
+      
       var htmlBody = GENERER_EMAIL_HEADER_(
         "Configuration déjà existante",
         "⚠️"
@@ -404,52 +365,52 @@ function CONFIG_INITIALE() {
         "</ol>" +
         "</div>";
       htmlBody += GENERER_EMAIL_FOOTER_();
-
+      
       MailApp.sendEmail({
         to: CONFIG.EMAIL_ADMIN,
         subject: "⚠️ Configuration déjà existante",
         htmlBody: htmlBody,
       });
-
+      
       return;
     }
-
+    
     Logger.log("");
     Logger.log("📊 Étape 1/3 : Création du Spreadsheet maître...");
     var ssId = CREER_SPREADSHEET_();
     props.setProperty(CONFIG.PROPS.ID_SPREADSHEET, ssId);
     var ss = SpreadsheetApp.openById(ssId);
     Logger.log("✅ Spreadsheet créé : " + ss.getUrl());
-
+    
     Logger.log("");
     Logger.log("📅 Étape 2/3 : Création de l'agenda partagé...");
     var calId = CREER_CALENDAR_();
     props.setProperty(CONFIG.PROPS.ID_CALENDAR, calId);
     var cal = CalendarApp.getCalendarById(calId);
     Logger.log("✅ Calendar créé : " + cal.getName());
-
+    
     Logger.log("");
     Logger.log("🔑 Étape 3/3 : Enregistrement de la version...");
     props.setProperty(CONFIG.PROPS.VERSION, CONFIG.VERSION);
     Logger.log("✅ Version enregistrée : " + CONFIG.VERSION);
-
+    
     // Audit
     ECRIRE_AUDIT_("INSTALLATION", {
       spreadsheet: ssId,
       calendar: calId,
       version: CONFIG.VERSION,
     });
-
+    
     Logger.log("");
     Logger.log("═══════════════════════════════════════════════════════");
     Logger.log("✅ CONFIGURATION TERMINÉE AVEC SUCCÈS");
     Logger.log("═══════════════════════════════════════════════════════");
     Logger.log("");
     Logger.log("📧 Envoi de l'email de confirmation...");
-
+    
     // Email HTML soigné
     var htmlBody = GENERER_EMAIL_HEADER_("Configuration réussie", "✅");
-
+    
     htmlBody +=
       '<div class="card">' +
       "<h2>🎉 Système configuré avec succès !</h2>" +
@@ -476,7 +437,7 @@ function CONFIG_INITIALE() {
       '<span class="info-value">Réponses, CRENEAUX, AUDIT, CONFIG, ARCHIVE</span>' +
       "</div>" +
       "</div>";
-
+    
     htmlBody +=
       '<div class="card">' +
       "<h2>📅 Calendar créé</h2>" +
@@ -510,20 +471,20 @@ function CONFIG_INITIALE() {
       "<li>✅ Rendre le système pleinement opérationnel</li>" +
       "</ul>" +
       "</div>";
-
+    
     htmlBody += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: "✅ Configuration initiale terminée",
       htmlBody: htmlBody,
     });
-
+    
     Logger.log("✅ Email de confirmation envoyé");
   } catch (e) {
     Logger.log("❌ ERREUR : " + e.toString());
     Logger.log("Stack : " + e.stack);
-
+    
     var htmlBody = GENERER_EMAIL_HEADER_("Erreur de configuration", "❌");
     htmlBody +=
       '<div class="card">' +
@@ -543,13 +504,13 @@ function CONFIG_INITIALE() {
       '<p style="margin-top: 20px;">Vérifiez les logs dans Apps Script pour plus de détails.</p>' +
       "</div>";
     htmlBody += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: "❌ Erreur lors de la configuration",
       htmlBody: htmlBody,
     });
-
+    
     throw new Error("Échec de la configuration initiale : " + e.toString());
   }
 }
@@ -579,7 +540,7 @@ function CONFIG_INITIALE() {
  * - Onglet "ARCHIVE" : Archivage des anciennes réponses
  * - Onglet "GROUPES" : Persistance des groupes formés
  *
- * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * ⚠️ IMPORTANT :
  * Cette fonction est appelée automatiquement par CONFIG_INITIALE()
  * Ne l'exécutez pas manuellement sauf en cas de problème
  *
@@ -587,17 +548,17 @@ function CONFIG_INITIALE() {
  */
 function CREER_SPREADSHEET_() {
   Logger.log("📊 Création du Spreadsheet...");
-
+  
   try {
     var ss = SpreadsheetApp.create(CONFIG.NOM_SPREADSHEET);
     var ssId = ss.getId();
-
+    
     Logger.log("✅ Spreadsheet créé : " + ssId);
-
+    
     // === ONGLET RÉPONSES ===
     var sheetReponses = ss.getSheets()[0];
     sheetReponses.setName(CONFIG.ONGLETS.REPONSES);
-
+    
     // Utiliser les en-têtes standardisés (25 colonnes)
     sheetReponses
       .getRange(1, 1, 1, CONFIG.HEADERS_REPONSES.length)
@@ -605,13 +566,13 @@ function CREER_SPREADSHEET_() {
       .setFontWeight("bold")
       .setBackground("#4285f4")
       .setFontColor("#ffffff");
-
+    
     sheetReponses.setFrozenRows(1);
     sheetReponses.autoResizeColumns(1, CONFIG.HEADERS_REPONSES.length);
-
+    
     // === ONGLET CRÉNEAUX ===
     var sheetCreneaux = ss.insertSheet(CONFIG.ONGLETS.CRENEAUX);
-
+    
     var headersCreneaux = [
       "Créneau",
       "Jour",
@@ -620,14 +581,14 @@ function CREER_SPREADSHEET_() {
       "Lieu",
       "Description",
     ];
-
+    
     sheetCreneaux
       .getRange(1, 1, 1, headersCreneaux.length)
       .setValues([headersCreneaux])
       .setFontWeight("bold")
       .setBackground("#34a853")
       .setFontColor("#ffffff");
-
+    
     var dataCreneaux = [
       [
         "Jeudi Campus",
@@ -682,13 +643,13 @@ function CREER_SPREADSHEET_() {
     sheetCreneaux
       .getRange(2, 1, dataCreneaux.length, dataCreneaux[0].length)
       .setValues(dataCreneaux);
-
+    
     sheetCreneaux.setFrozenRows(1);
     sheetCreneaux.autoResizeColumns(1, headersCreneaux.length);
-
+    
     // === ONGLET AUDIT ===
     var sheetAudit = ss.insertSheet(CONFIG.ONGLETS.AUDIT);
-
+    
     var headersAudit = ["Timestamp", "Action", "Détails", "Utilisateur"];
 
     sheetAudit
@@ -697,13 +658,13 @@ function CREER_SPREADSHEET_() {
       .setFontWeight("bold")
       .setBackground("#fbbc04")
       .setFontColor("#000000");
-
+    
     sheetAudit.setFrozenRows(1);
     sheetAudit.autoResizeColumns(1, headersAudit.length);
-
+    
     // === ONGLET CONFIG ===
     var sheetConfig = ss.insertSheet(CONFIG.ONGLETS.CONFIG);
-
+    
     var headersConfig = ["Paramètre", "Valeur", "Description"];
 
     sheetConfig
@@ -712,7 +673,7 @@ function CREER_SPREADSHEET_() {
       .setFontWeight("bold")
       .setBackground("#ea4335")
       .setFontColor("#ffffff");
-
+    
     var dataConfig = [
       ["Version", CONFIG.VERSION, "Version du système"],
       ["Email Admin", CONFIG.EMAIL_ADMIN, "Email de l'administrateur"],
@@ -734,13 +695,13 @@ function CREER_SPREADSHEET_() {
     sheetConfig
       .getRange(2, 1, dataConfig.length, dataConfig[0].length)
       .setValues(dataConfig);
-
+    
     sheetConfig.setFrozenRows(1);
     sheetConfig.autoResizeColumns(1, headersConfig.length);
-
+    
     // === ONGLET ARCHIVE ===
     var sheetArchive = ss.insertSheet(CONFIG.ONGLETS.ARCHIVE);
-
+    
     // Utiliser les mêmes en-têtes que Réponses (25 colonnes)
     sheetArchive
       .getRange(1, 1, 1, CONFIG.HEADERS_REPONSES.length)
@@ -748,7 +709,7 @@ function CREER_SPREADSHEET_() {
       .setFontWeight("bold")
       .setBackground("#9e9e9e")
       .setFontColor("#ffffff");
-
+    
     sheetArchive.setFrozenRows(1);
     sheetArchive.autoResizeColumns(1, CONFIG.HEADERS_REPONSES.length);
 
@@ -776,13 +737,13 @@ function CREER_SPREADSHEET_() {
 
     sheetGroupes.setFrozenRows(1);
     sheetGroupes.autoResizeColumns(1, headersGroupes.length);
-
+    
     // === PERMISSIONS ===
     var file = DriveApp.getFileById(ssId);
     file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
-
+    
     Logger.log("✅ Spreadsheet configuré");
-
+    
     return ssId;
   } catch (e) {
     Logger.log("❌ ERREUR : " + e.toString());
@@ -806,7 +767,7 @@ function CREER_SPREADSHEET_() {
  * - Couleurs différenciées pour les types d'événements
  * - Permissions configurées pour l'administrateur
  *
- * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * ⚠️ IMPORTANT :
  * Cette fonction est appelée automatiquement par CONFIG_INITIALE()
  * Le calendrier sera visible dans votre Google Calendar
  *
@@ -814,17 +775,17 @@ function CREER_SPREADSHEET_() {
  */
 function CREER_CALENDAR_() {
   Logger.log("📅 Création du Calendar...");
-
+  
   try {
     var cal = CalendarApp.createCalendar(CONFIG.NOM_CALENDAR, {
       summary: "Agenda des sessions de groupes d'étude",
       timeZone: CONFIG.FUSEAU_HORAIRE,
       color: CalendarApp.Color.BLUE,
     });
-
+    
     var calId = cal.getId();
     Logger.log("✅ Calendar créé : " + calId);
-
+    
     return calId;
   } catch (e) {
     Logger.log("❌ ERREUR : " + e.toString());
@@ -845,18 +806,18 @@ function ECRIRE_AUDIT_(action, details) {
   try {
     var props = PropertiesService.getScriptProperties();
     var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
-
+    
     if (!ssId) return;
-
+    
     var ss = SpreadsheetApp.openById(ssId);
     var sheetAudit = ss.getSheetByName(CONFIG.ONGLETS.AUDIT);
-
+    
     if (!sheetAudit) return;
-
+    
     var timestamp = new Date();
     var utilisateur = Session.getActiveUser().getEmail();
     var detailsStr = JSON.stringify(details);
-
+    
     sheetAudit.appendRow([timestamp, action, detailsStr, utilisateur]);
   } catch (e) {
     Logger.log("⚠️ Impossible d'écrire dans l'audit : " + e.toString());
@@ -897,10 +858,10 @@ function CALCULER_SEMAINE_ISO_(date) {
   var d = new Date(date.getTime());
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-
+  
   var premierJanvier = new Date(d.getFullYear(), 0, 1);
   var numeroSemaine = Math.ceil(((d - premierJanvier) / 86400000 + 1) / 7);
-
+  
   return {
     annee: d.getFullYear(),
     semaine: numeroSemaine,
@@ -921,20 +882,20 @@ function ECRIRE_AUDIT_(action, details) {
   try {
     var props = PropertiesService.getScriptProperties();
     var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
-
+    
     if (!ssId) {
       Logger.log("⚠️ Audit impossible : pas de Spreadsheet configuré");
       return;
     }
-
+    
     var ss = SpreadsheetApp.openById(ssId);
     var sheetAudit = ss.getSheetByName(CONFIG.ONGLETS.AUDIT);
-
+    
     if (!sheetAudit) {
       Logger.log("⚠️ Onglet AUDIT introuvable");
       return;
     }
-
+    
     var timestamp = new Date();
     var utilisateur = Session.getActiveUser().getEmail() || "Système";
     var detailsStr =
@@ -964,7 +925,7 @@ function ECRIRE_AUDIT_(action, details) {
  * 3. Configure tous les triggers automatiques
  * 4. Programme la planification quotidienne des groupes
  *
- * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * ⚠️ IMPORTANT :
  * Exécutez cette fonction APRÈS CONFIG_INITIALE()
  * Cette fonction configure le système pour fonctionner automatiquement
  *
@@ -975,16 +936,16 @@ function DEMARRER_SYSTEME() {
   Logger.log("🚀 DÉMARRAGE DU SYSTÈME");
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("");
-
+  
   // ✅ DÉCLARER LES VARIABLES ICI (avant le try)
   var formId = null;
   var lundiSemaine = null;
   var form = null;
   var infoSemaine = null;
-
+  
   try {
     var props = PropertiesService.getScriptProperties();
-
+    
     // Vérifier configuration
     var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
     if (!ssId) {
@@ -992,28 +953,28 @@ function DEMARRER_SYSTEME() {
         "Système non configuré. Exécutez CONFIG_INITIALE() d'abord"
       );
     }
-
+    
     // Calculer le lundi de la semaine prochaine
     var maintenant = new Date();
     lundiSemaine = AJOUTER_JOURS_(OBTENIR_LUNDI_SEMAINE_(maintenant), 7); // ✅ Assignation
-
+    
     Logger.log(
       "📅 Semaine cible : " +
         Utilities.formatDate(lundiSemaine, CONFIG.FUSEAU_HORAIRE, "dd/MM/yyyy")
     );
-
+    
     // Étape 1: Créer le formulaire
     Logger.log("");
     Logger.log("📝 Étape 1/3 : Création du formulaire de la semaine...");
     form = CREER_FORMULAIRE_SEMAINE_(lundiSemaine); // ✅ Assignation
     formId = form.getId(); // ✅ Assignation
-
+    
     Logger.log("✅ Formulaire créé : " + formId);
-
+    
     // Étape 2: Installer le trigger de soumission
     Logger.log("");
     Logger.log("⚙️ Étape 2/3 : Installation du trigger de soumission...");
-
+    
     // Supprimer les anciens triggers de soumission
     var triggersForm = ScriptApp.getProjectTriggers();
     for (var i = 0; i < triggersForm.length; i++) {
@@ -1024,19 +985,19 @@ function DEMARRER_SYSTEME() {
         Logger.log("  🗑️ Ancien trigger supprimé");
       }
     }
-
+    
     // Créer le nouveau trigger de soumission
     ScriptApp.newTrigger("TRAITER_REPONSE_FORMULAIRE_")
       .forForm(formId)
       .onFormSubmit()
       .create();
-
+    
     Logger.log("✅ Trigger de soumission installé");
-
+    
     // Étape 3: Installer le trigger hebdomadaire
     Logger.log("");
     Logger.log("⚙️ Étape 3/3 : Installation du trigger hebdomadaire...");
-
+    
     // Supprimer les anciens triggers hebdomadaires
     var triggersHebdo = ScriptApp.getProjectTriggers();
     for (var j = 0; j < triggersHebdo.length; j++) {
@@ -1048,14 +1009,14 @@ function DEMARRER_SYSTEME() {
         Logger.log("  🗑️ Ancien trigger hebdo supprimé");
       }
     }
-
+    
     // Créer le nouveau trigger hebdomadaire (dimanche 9h)
     ScriptApp.newTrigger("CREER_NOUVEAU_FORMULAIRE_HEBDO_")
       .timeBased()
       .onWeekDay(ScriptApp.WeekDay.SUNDAY)
       .atHour(CONFIG.HEURE_CREATION_FORM)
       .create();
-
+    
     Logger.log(
       "✅ Trigger hebdomadaire installé (Dimanche " +
         CONFIG.HEURE_CREATION_FORM +
@@ -1064,24 +1025,24 @@ function DEMARRER_SYSTEME() {
 
     // Trigger quotidien planification groupes à midi
     PROGRAMMER_PLANIFICATION_QUOTIDIENNE_MIDI_();
-
+    
     Logger.log("");
     Logger.log("═══════════════════════════════════════════════════════");
     Logger.log("✅ SYSTÈME DÉMARRÉ AVEC SUCCÈS");
     Logger.log("═══════════════════════════════════════════════════════");
-
+    
     // Calculer les infos de semaine pour l'email
     infoSemaine = CALCULER_SEMAINE_ISO_(lundiSemaine); // ✅ Assignation
-
+    
     // Email HTML de succès
     var htmlBody = GENERER_EMAIL_HEADER_("Système démarré", "🚀");
-
+    
     htmlBody +=
       '<div class="card">' +
       '<h2 class="success">🎉 Le système est maintenant opérationnel !</h2>' +
       "<p>Tous les composants sont actifs et fonctionnels.</p>" +
       "</div>";
-
+    
     htmlBody +=
       '<div class="card">' +
       "<h2>📝 Formulaire créé</h2>" +
@@ -1127,23 +1088,23 @@ function DEMARRER_SYSTEME() {
       "</ol>" +
       '<p style="margin-top: 20px;">Pour tester le système : <code>TEST_COMPLET()</code></p>' +
       "</div>";
-
+    
     htmlBody += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: "🚀 Système démarré avec succès",
       htmlBody: htmlBody,
     });
-
+    
     Logger.log("✅ Email de confirmation envoyé");
   } catch (e) {
     Logger.log("❌ ERREUR : " + e.toString());
     Logger.log("Stack : " + e.stack);
-
+    
     // ✅ Email d'erreur (les variables sont maintenant accessibles)
     var htmlBodyError = GENERER_EMAIL_HEADER_("Erreur de démarrage", "❌");
-
+    
     htmlBodyError +=
       '<div class="card">' +
       '<h2 class="error">❌ Erreur lors du démarrage</h2>' +
@@ -1155,11 +1116,11 @@ function DEMARRER_SYSTEME() {
       "</div>" +
       '<div class="info-line">' +
       '<span class="info-label">Stack :</span>' +
-      '<span class="info-value"><pre style="white-space: pre-wrap; word-wrap: break-word;">' +
+      '<span class="info-value"><pre style="white-space: pre-wrap; word-wrap: break-word;">' + 
       e.stack +
       "</pre></span>" +
       "</div>";
-
+    
     // Ajouter contexte si disponible
     if (formId) {
       htmlBodyError +=
@@ -1170,12 +1131,12 @@ function DEMARRER_SYSTEME() {
         "</span>" +
         "</div>";
     }
-
+    
     if (lundiSemaine) {
       htmlBodyError +=
         '<div class="info-line">' +
         '<span class="info-label">Semaine cible :</span>' +
-        '<span class="info-value">' +
+        '<span class="info-value">' + 
         Utilities.formatDate(
           lundiSemaine,
           CONFIG.FUSEAU_HORAIRE,
@@ -1196,15 +1157,15 @@ function DEMARRER_SYSTEME() {
       "<li>Si le problème persiste, exécutez NETTOYER_SYSTEME() puis recommencez</li>" +
       "</ol>" +
       "</div>";
-
+    
     htmlBodyError += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: "❌ Erreur lors du démarrage du système",
       htmlBody: htmlBodyError,
     });
-
+    
     throw e;
   }
 }
@@ -1220,7 +1181,7 @@ function DEMARRER_SYSTEME() {
  */
 function INSTALLER_TRIGGERS_() {
   Logger.log("⏰ Installation des triggers...");
-
+  
   try {
     // Supprimer les anciens triggers
     var triggers = ScriptApp.getProjectTriggers();
@@ -1228,7 +1189,7 @@ function INSTALLER_TRIGGERS_() {
       ScriptApp.deleteTrigger(triggers[i]);
     }
     Logger.log("✅ Anciens triggers supprimés");
-
+    
     // Trigger hebdomadaire : Dimanche 9h
     ScriptApp.newTrigger("CREER_FORMULAIRE_HEBDO_")
       .timeBased()
@@ -1236,7 +1197,7 @@ function INSTALLER_TRIGGERS_() {
       .atHour(CONFIG.HEURE_CREATION_FORM)
       .create();
     Logger.log("✅ Trigger hebdomadaire installé (Dimanche 9h)");
-
+    
     // Trigger formulaire
     INSTALLER_TRIGGER_FORMULAIRE_();
   } catch (e) {
@@ -1252,19 +1213,19 @@ function INSTALLER_TRIGGER_FORMULAIRE_() {
   try {
     var props = PropertiesService.getScriptProperties();
     var formId = props.getProperty(CONFIG.PROPS.ID_FORM);
-
+    
     if (!formId) {
       Logger.log("⚠️ Aucun formulaire actif");
       return;
     }
-
+    
     var form = FormApp.openById(formId);
-
+    
     ScriptApp.newTrigger("TRAITER_REPONSE_FORMULAIRE_")
       .forForm(form)
       .onFormSubmit()
       .create();
-
+    
     Logger.log("✅ Trigger formulaire installé");
   } catch (e) {
     Logger.log("❌ ERREUR trigger formulaire : " + e.toString());
@@ -1289,7 +1250,7 @@ function INSTALLER_TRIGGER_FORMULAIRE_() {
  * 4. Programme le trigger de traitement des réponses
  * 5. Envoie le lien du formulaire à l'administrateur
  *
- * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * ⚠️ IMPORTANT :
  * Cette fonction est appelée automatiquement par un trigger
  * Elle crée un formulaire complet avec toutes les questions nécessaires
  *
@@ -1299,20 +1260,20 @@ function CREER_FORMULAIRE_HEBDO_() {
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("📝 CRÉATION AUTOMATIQUE DU FORMULAIRE HEBDOMADAIRE");
   Logger.log("═══════════════════════════════════════════════════════");
-
+  
   try {
     var maintenant = new Date();
     var lundiProchain = AJOUTER_JOURS_(
       maintenant,
       (8 - maintenant.getDay()) % 7
     );
-
+    
     var formId = CREER_FORMULAIRE_SEMAINE_(lundiProchain);
-
+    
     Logger.log("✅ Formulaire hebdomadaire créé : " + formId);
   } catch (e) {
     Logger.log("❌ ERREUR : " + e.toString());
-
+    
     var htmlBody = GENERER_EMAIL_HEADER_("Erreur création formulaire", "❌");
     htmlBody +=
       '<div class="card">' +
@@ -1326,7 +1287,7 @@ function CREER_FORMULAIRE_HEBDO_() {
       "</div>" +
       "</div>";
     htmlBody += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: "❌ Échec création formulaire automatique",
@@ -1343,16 +1304,16 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
     "📝 Création du formulaire pour la semaine du " +
       Utilities.formatDate(lundiSemaine, CONFIG.FUSEAU_HORAIRE, "dd/MM/yyyy")
   );
-
+  
   try {
     var props = PropertiesService.getScriptProperties();
     var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
     var ss = SpreadsheetApp.openById(ssId);
-
+    
     // Calculer la semaine ISO
     var infoSemaine = CALCULER_SEMAINE_ISO_(lundiSemaine);
     var numSemaine = infoSemaine.annee + "W" + ZERO_PAD_(infoSemaine.semaine);
-
+    
     var dimancheSemaine = AJOUTER_JOURS_(lundiSemaine, 6);
     var dateDebut = Utilities.formatDate(
       lundiSemaine,
@@ -1373,19 +1334,19 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
       " - " +
       dateFin +
       ")";
-
+    
     Logger.log("📝 Création : " + titreForm);
-
+    
     // Créer le formulaire
     var form = FormApp.create(titreForm);
     var formId = form.getId();
-
+    
     form.setDescription(
       "Inscris-toi aux créneaux de groupes d'étude de la semaine.\n\n" +
-        "⚠️ Une seule réponse par personne et par semaine.\n" +
-        "✏️ Tu peux modifier ta réponse jusqu'au dimanche 23h59."
+      "⚠️ Une seule réponse par personne et par semaine.\n" +
+      "✏️ Tu peux modifier ta réponse jusqu'au dimanche 23h59."
     );
-
+    
     // ✅ CONFIGURATION CORRIGÉE (sans setRequireLogin)
     form.setCollectEmail(true);
     form.setLimitOneResponsePerUser(true);
@@ -1394,81 +1355,81 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
     form.setShowLinkToRespondAgain(false);
     form.setConfirmationMessage(
       "✅ Inscription enregistrée !\n\n" +
-        "Tu recevras un email de confirmation avec tous les détails.\n" +
-        "Les événements ont été ajoutés à ton calendrier."
+      "Tu recevras un email de confirmation avec tous les détails.\n" +
+      "Les événements ont été ajoutés à ton calendrier."
     );
-
+    
     // === SECTION IDENTITÉ ===
-
+    
     form
       .addSectionHeaderItem()
       .setTitle("👤 Identité")
       .setHelpText("Informations obligatoires pour l'inscription");
-
+    
     form.addTextItem().setTitle("Prénom").setRequired(true);
-
+    
     form.addTextItem().setTitle("Nom").setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Niveau")
       .setChoiceValues(["B3", "B3+L"])
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Groupe")
       .setChoiceValues(["L3A", "L3B", "L3C"])
       .setRequired(true);
-
+    
     // === SECTION MATIÈRES ===
-
+    
     form
       .addSectionHeaderItem()
       .setTitle("📚 Matières")
       .setHelpText("Choisis une ou deux matières pour la semaine");
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Matière principale")
       .setChoiceValues(CONFIG.MATIERES)
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Type d'activité (Matière principale)")
       .setChoiceValues(["Révisions", "Devoirs"])
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Matière secondaire (optionnelle)")
       .setChoiceValues(["Aucune"].concat(CONFIG.MATIERES))
       .setRequired(false);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Type d'activité (Matière secondaire)")
       .setChoiceValues(["Révisions", "Devoirs"])
       .setRequired(false);
-
+    
     // === SECTION CRÉNEAUX ===
-
+    
     form
       .addSectionHeaderItem()
       .setTitle("📅 Créneaux disponibles")
       .setHelpText("Coche tous les créneaux où tu peux venir");
-
+    
     // Jeudi Campus
     var jeudi = AJOUTER_JOURS_(lundiSemaine, 3);
     var dateJeudi = Utilities.formatDate(jeudi, CONFIG.FUSEAU_HORAIRE, "dd/MM");
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("🏫 Jeudi " + dateJeudi + " (13h-17h) - Campus")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     // Lundi Discord
     var dateLundi = Utilities.formatDate(
       lundiSemaine,
@@ -1481,17 +1442,17 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
       .setTitle("💬 Lundi " + dateLundi + " (16h45-19h) - Discord")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     // Mardi Discord
     var mardi = AJOUTER_JOURS_(lundiSemaine, 1);
     var dateMardi = Utilities.formatDate(mardi, CONFIG.FUSEAU_HORAIRE, "dd/MM");
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("💬 Mardi " + dateMardi + " (16h45-19h) - Discord")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     // Mercredi Discord
     var mercredi = AJOUTER_JOURS_(lundiSemaine, 2);
     var dateMercredi = Utilities.formatDate(
@@ -1505,14 +1466,14 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
       .setTitle("💬 Mercredi " + dateMercredi + " (16h45-19h) - Discord")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     // Jeudi Discord
     form
       .addMultipleChoiceItem()
       .setTitle("💬 Jeudi " + dateJeudi + " (16h45-19h) - Discord")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     // Vendredi Discord
     var vendredi = AJOUTER_JOURS_(lundiSemaine, 4);
     var dateVendredi = Utilities.formatDate(
@@ -1526,23 +1487,23 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
       .setTitle("💬 Vendredi " + dateVendredi + " (16h45-19h) - Discord")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     // === LIER AU SPREADSHEET (MÉTHODE CORRIGÉE) ===
-
+    
     // Créer le trigger de soumission manuellement
     ScriptApp.newTrigger("TRAITER_REPONSE_FORMULAIRE_")
       .forForm(form)
       .onFormSubmit()
       .create();
-
+    
     Logger.log("✅ Trigger de soumission créé");
-
+    
     // === SAUVEGARDER LES IDs ===
-
-    // À la fin, RETOURNER L'OBJET FORM, PAS JUSTE L'ID
+    
+     // À la fin, RETOURNER L'OBJET FORM, PAS JUSTE L'ID
     props.setProperty(CONFIG.PROPS.ID_FORM, formId);
     props.setProperty(CONFIG.PROPS.SEMAINE_FORM, numSemaine);
-
+    
     Logger.log("✅ Formulaire créé : " + formId);
     Logger.log("✅ URL : " + form.getPublishedUrl());
 
@@ -1573,109 +1534,63 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("📥 TRAITEMENT D'UNE NOUVELLE RÉPONSE");
   Logger.log("═══════════════════════════════════════════════════════");
-
+  
   try {
     var props = PropertiesService.getScriptProperties();
     var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
     var calId = props.getProperty(CONFIG.PROPS.ID_CALENDAR);
     var numSemaine = props.getProperty(CONFIG.PROPS.SEMAINE_FORM);
-
+    
     var ss = SpreadsheetApp.openById(ssId);
     var cal = CalendarApp.getCalendarById(calId);
     var sheetReponses = ss.getSheetByName(CONFIG.ONGLETS.REPONSES);
-
+    
     // Récupérer les données de la réponse
     var response = e.response;
     var itemResponses = response.getItemResponses();
     var email = response.getRespondentEmail();
     var timestamp = new Date();
-
+    
     Logger.log("📧 Email : " + email);
     Logger.log("⏰ Timestamp : " + timestamp);
-
-    // Extraire les données de la réponse
+    
+    // Extraire les données de la réponse (structure: Prénom, Nom, Niveau, Groupe, ...)
     var items = itemResponses;
-
-    // CORRECTION : Structure réelle du formulaire Google Forms
-    // Le formulaire a une structure différente de ce qui était attendu
     
-    // Informations de base (structure réelle du formulaire)
-    var nomComplet = items[0].getResponse(); // "Nom & Prénom" (combiné)
-    var pseudoDiscord = items[1].getResponse(); // "Pseudo Discord"
-    var pseudoDiscordOptionnel = items[2].getResponse(); // "Pseudo Discord (si tu en as un)"
+    var prenom = items[0].getResponse();
+    var nom = items[1].getResponse();
+    var niveau = items[2].getResponse();
+    var groupe = items[3].getResponse();
     
-    // Séparer le nom complet en prénom et nom
-    var nomParts = nomComplet.split(" ");
-    var prenom = nomParts[0] || "";
-    var nom = nomParts.slice(1).join(" ") || "";
+    // MATIÈRE 1
+    var matiere1 = items[4].getResponse();
+    var type1 = items[5].getResponse();
+    var accompagnement1 = items[6].getResponse();
     
-    // Matières sélectionnées (format: "Matière1, Matière2")
-    var matieresSelectionnees = items[3].getResponse();
+    // MATIÈRE 2
+    var matiere2 = items[7].getResponse();
+    var type2 = items[8] ? items[8].getResponse() : "";
+    var accompagnement2 = items[9] ? items[9].getResponse() : "";
     
-    // Niveaux par matière (6 colonnes de niveaux)
-    var niveauMath = items[4].getResponse();
-    var niveauSystInfo = items[5].getResponse();
-    var niveauAnglais = items[6].getResponse();
-    var niveauCyber = items[7].getResponse();
-    var niveauLinux = items[8].getResponse();
-    var niveauPython = items[9].getResponse();
+    // MATIÈRE 3
+    var matiere3 = items[10].getResponse();
+    var type3 = items[11] ? items[11].getResponse() : "";
+    var accompagnement3 = items[12] ? items[12].getResponse() : "";
     
-    // Créneaux sélectionnés
-    var creneauxSelectionnes = items[10].getResponse();
+    // MATIÈRE 4
+    var matiere4 = items[13].getResponse();
+    var type4 = items[14] ? items[14].getResponse() : "";
+    var accompagnement4 = items[15] ? items[15].getResponse() : "";
     
-    // Commentaire optionnel
-    var commentaire = items[11] ? items[11].getResponse() : "";
-    
-    // Pour la compatibilité avec le reste du code, on va extraire les matières
-    // et leurs niveaux correspondants
-    var matieresArray = matieresSelectionnees.split(",").map(function(m) { return m.trim(); });
-    
-    // Initialiser les variables de matières
-    var matiere1 = matieresArray[0] || "";
-    var matiere2 = matieresArray[1] || "";
-    var matiere3 = "";
-    var matiere4 = "";
-    
-    // Déterminer les niveaux pour les matières sélectionnées
-    var type1 = "";
-    var type2 = "";
-    var type3 = "";
-    var type4 = "";
-    var accompagnement1 = "";
-    var accompagnement2 = "";
-    var accompagnement3 = "";
-    var accompagnement4 = "";
-    
-    // Mapper les niveaux selon les matières sélectionnées
-    if (matiere1) {
-      if (matiere1.includes("Mathématiques")) type1 = niveauMath;
-      else if (matiere1.includes("Systèmes d'information")) type1 = niveauSystInfo;
-      else if (matiere1.includes("Anglais")) type1 = niveauAnglais;
-      else if (matiere1.includes("Cyberstructure")) type1 = niveauCyber;
-      else if (matiere1.includes("Linux")) type1 = niveauLinux;
-      else if (matiere1.includes("Python")) type1 = niveauPython;
-    }
-    
-    if (matiere2) {
-      if (matiere2.includes("Mathématiques")) type2 = niveauMath;
-      else if (matiere2.includes("Systèmes d'information")) type2 = niveauSystInfo;
-      else if (matiere2.includes("Anglais")) type2 = niveauAnglais;
-      else if (matiere2.includes("Cyberstructure")) type2 = niveauCyber;
-      else if (matiere2.includes("Linux")) type2 = niveauLinux;
-      else if (matiere2.includes("Python")) type2 = niveauPython;
-    }
-    
-    // Pour la compatibilité, on va définir des valeurs par défaut
-    var niveau = "[B3] Bachelor 3"; // Valeur par défaut
-    var groupe = "[L3C] Groupe C"; // Valeur par défaut
-    
-    // Analyser les créneaux sélectionnés
-    var jeudiCampus = creneauxSelectionnes.includes("Jeudi") && creneauxSelectionnes.includes("Campus") ? "Oui" : "";
-    var lundiDiscord = creneauxSelectionnes.includes("Lundi") && creneauxSelectionnes.includes("Discord") ? "Oui" : "";
-    var mardiDiscord = creneauxSelectionnes.includes("Mardi") && creneauxSelectionnes.includes("Discord") ? "Oui" : "";
-    var mercrediDiscord = creneauxSelectionnes.includes("Mercredi") && creneauxSelectionnes.includes("Discord") ? "Oui" : "";
-    var jeudiDiscord = creneauxSelectionnes.includes("Jeudi") && creneauxSelectionnes.includes("Discord") ? "Oui" : "";
-    var vendrediDiscord = creneauxSelectionnes.includes("Vendredi") && creneauxSelectionnes.includes("Discord") ? "Oui" : "";
+    // CRÉNEAUX
+    var jeudiCampus = items[16].getResponse();
+    var lundiDiscord = items[17].getResponse();
+    var mardiDiscord = items[18].getResponse();
+    var mercrediDiscord = items[19].getResponse();
+    var jeudiDiscord = items[20].getResponse();
+    var vendrediDiscord = items[21].getResponse();
+    // COMMENTAIRE
+    var commentaire = items[22] ? items[22].getResponse() : "";
 
     // Regrouper les réponses créneaux pour simplifier l'accès plus loin.
     var creneaux = {
@@ -1694,13 +1609,13 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
     if (matiere2 && matiere2.indexOf("Aucune") === -1) {
       Logger.log("📚 Matière 2 : " + matiere2 + " [" + type2 + "]");
     }
-
+    
     // === GESTION DU MODE REPLACE ===
-
+    
     var data = sheetReponses.getDataRange().getValues();
     var ligneExistante = -1;
     var modeReplace = false;
-
+    
     for (var i = 1; i < data.length; i++) {
       if (data[i][1] === email) {
         ligneExistante = i + 1;
@@ -1708,21 +1623,21 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
         break;
       }
     }
-
+    
     if (modeReplace) {
       Logger.log(
         "🔄 REPLACE MODE : Ancienne réponse trouvée ligne " + ligneExistante
       );
-
+      
       // Supprimer les anciens événements
       SUPPRIMER_EVENTS_UTILISATEUR_(cal, email, numSemaine);
-
+      
       // Supprimer l'ancienne ligne
       sheetReponses.deleteRow(ligneExistante);
-
+      
       Logger.log("✅ Ancienne réponse supprimée");
     }
-
+    
     // === ENREGISTRER LA RÉPONSE DANS LE SPREADSHEET ===
     // Construire exactement 25 éléments dans l'ordre des HEADERS_REPONSES
     var rowValues = [
@@ -1781,9 +1696,9 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
     if (vendrediDiscord === "Oui") {
       creneauxChoisis.push("Vendredi soir (Discord) - 16h45-19h");
     }
-
+    
     // === ENVOYER EMAIL DE CONFIRMATION ===
-
+    
     ENVOYER_EMAIL_CONFIRMATION_(
       email,
       prenom,
@@ -1802,9 +1717,9 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
       modeReplace,
       numSemaine
     );
-
+    
     // === NOTIFIER L'ADMIN ===
-
+    
     NOTIFIER_ADMIN_NOUVELLE_INSCRIPTION_(
       email,
       prenom,
@@ -1822,37 +1737,37 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
       creneauxChoisis,
       modeReplace
     );
-
+    
     // === AUDIT ===
-
+    
     ECRIRE_AUDIT_(
       modeReplace ? "INSCRIPTION_MODIFIEE" : "NOUVELLE_INSCRIPTION",
       {
-        email: email,
-        nom: nomComplet,
-        niveau: niveau,
-        groupe: groupe,
-        matiere1: matiere1,
-        type1: type1,
-        matiere2: matiere2,
-        type2: type2,
-        nbCreneaux: eventsCreed.length,
+      email: email,
+        nom: prenom + " " + nom,
+      niveau: niveau,
+      groupe: groupe,
+      matiere1: matiere1,
+      type1: type1,
+      matiere2: matiere2,
+      type2: type2,
+      nbCreneaux: eventsCreed.length,
         semaine: numSemaine,
       }
     );
-
+    
     Logger.log("═══════════════════════════════════════════════════════");
     Logger.log("✅ RÉPONSE TRAITÉE AVEC SUCCÈS");
     Logger.log("═══════════════════════════════════════════════════════");
   } catch (e) {
     Logger.log("❌ ERREUR : " + e.toString());
     Logger.log("Stack : " + e.stack);
-
+    
     ECRIRE_AUDIT_("ERREUR_TRAITEMENT", {
       erreur: e.toString(),
       stack: e.stack,
     });
-
+    
     var htmlBody = GENERER_EMAIL_HEADER_("Erreur traitement réponse", "❌");
     htmlBody +=
       '<div class="card">' +
@@ -1871,13 +1786,13 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
       "</div>" +
       "</div>";
     htmlBody += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: "❌ Erreur traitement réponse",
       htmlBody: htmlBody,
     });
-
+    
     throw e;
   }
 }
@@ -1904,21 +1819,21 @@ function CREER_EVENT_CRENEAU_(
 ) {
   try {
     var jourSemaine = AJOUTER_JOURS_(lundiSemaine, creneau.jour - 1);
-
+    
     var heureDebut = Math.floor(creneau.debut);
     var minuteDebut = Math.round((creneau.debut - heureDebut) * 60);
-
+    
     var heureFin = Math.floor(creneau.fin);
     var minuteFin = Math.round((creneau.fin - heureFin) * 60);
-
+    
     var dateDebut = new Date(jourSemaine);
     dateDebut.setHours(heureDebut, minuteDebut, 0, 0);
-
+    
     var dateFin = new Date(jourSemaine);
     dateFin.setHours(heureFin, minuteFin, 0, 0);
-
+    
     var titre = "📚 " + matiere + " [" + type + "] - " + creneau.lieu;
-
+    
     var descriptionComplete =
       description +
       "\n\n" +
@@ -1929,21 +1844,21 @@ function CREER_EVENT_CRENEAU_(
       Utilities.formatDate(dateDebut, CONFIG.FUSEAU_HORAIRE, "HH:mm") +
       " - " +
       Utilities.formatDate(dateFin, CONFIG.FUSEAU_HORAIRE, "HH:mm");
-
+    
     var event = calendar.createEvent(titre, dateDebut, dateFin, {
       description: descriptionComplete,
       location: creneau.lieu,
       guests: emailParticipant,
       sendInvites: true,
     });
-
+    
     event.setColor(couleur);
     event.setTag("EMAIL_PARTICIPANT", emailParticipant);
     event.setTag("MATIERE", matiere);
     event.setTag("TYPE", type);
-
+    
     Logger.log("  ✅ Event créé : " + titre);
-
+    
     return event;
   } catch (e) {
     Logger.log("  ❌ ERREUR création event : " + e.toString());
@@ -1958,10 +1873,10 @@ function SUPPRIMER_EVENTS_UTILISATEUR_(calendar, email, numSemaine) {
   try {
     var lundiSemaine = OBTENIR_LUNDI_SEMAINE_DEPUIS_NUMERO_(numSemaine);
     var dimancheSemaine = AJOUTER_JOURS_(lundiSemaine, 6);
-
+    
     var events = calendar.getEvents(lundiSemaine, dimancheSemaine);
     var nbSupprimes = 0;
-
+    
     for (var i = 0; i < events.length; i++) {
       var event = events[i];
       var desc = event.getDescription() || "";
@@ -1973,7 +1888,7 @@ function SUPPRIMER_EVENTS_UTILISATEUR_(calendar, email, numSemaine) {
         nbSupprimes++;
       }
     }
-
+    
     Logger.log("  🗑️ " + nbSupprimes + " ancien(s) événement(s) supprimé(s)");
   } catch (e) {
     Logger.log("  ⚠️ Erreur suppression events : " + e.toString());
@@ -2018,9 +1933,9 @@ function ENVOYER_EMAIL_CONFIRMATION_(
     }
     var action = modeReplace ? "modifiée" : "enregistrée";
     var emoji = modeReplace ? "🔄" : "✅";
-
+    
     var htmlBody = GENERER_EMAIL_HEADER_("Inscription " + action, emoji);
-
+    
     // Card de confirmation
     htmlBody +=
       '<div class="card">' +
@@ -2040,7 +1955,7 @@ function ENVOYER_EMAIL_CONFIRMATION_(
       action +
       ".</p>" +
       "</div>";
-
+    
     // Card informations personnelles
     htmlBody +=
       '<div class="card">' +
@@ -2078,7 +1993,7 @@ function ENVOYER_EMAIL_CONFIRMATION_(
       type1 +
       "]</span>" +
       "</div>";
-
+    
     if (matiere2 && matiere2.indexOf("Aucune") === -1) {
       htmlBody +=
         '<div class="matiere-item">' +
@@ -2113,7 +2028,7 @@ function ENVOYER_EMAIL_CONFIRMATION_(
     }
 
     htmlBody += "</div>";
-
+    
     // Card créneaux
     htmlBody +=
       '<div class="card">' +
@@ -2133,9 +2048,9 @@ function ENVOYER_EMAIL_CONFIRMATION_(
       htmlBody +=
         '<p style="color: #e67e22;">⚠️ Aucun créneau sélectionné.</p>';
     }
-
+    
     htmlBody += "</div>";
-
+    
     // Card informations pratiques
     htmlBody +=
       '<div class="card">' +
@@ -2159,15 +2074,15 @@ function ENVOYER_EMAIL_CONFIRMATION_(
       "</ul>" +
       "</div>" +
       "</div>";
-
+    
     htmlBody += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: email,
       subject: emoji + " Inscription " + action + " - Semaine " + numSemaine,
       htmlBody: htmlBody,
     });
-
+    
     Logger.log("  ✅ Email de confirmation envoyé à " + email);
   } catch (e) {
     Logger.log("  ⚠️ Erreur envoi email confirmation : " + e.toString());
@@ -2197,9 +2112,9 @@ function NOTIFIER_ADMIN_NOUVELLE_INSCRIPTION_(
   try {
     var action = modeReplace ? "modifiée" : "nouvelle";
     var emoji = modeReplace ? "🔄" : "🆕";
-
+    
     var htmlBody = GENERER_EMAIL_HEADER_("Inscription " + action, emoji);
-
+    
     htmlBody +=
       '<div class="card">' +
       "<h2>" +
@@ -2253,7 +2168,7 @@ function NOTIFIER_ADMIN_NOUVELLE_INSCRIPTION_(
       type1 +
       "]" +
       "</div>";
-
+    
     if (matiere2 && matiere2.indexOf("Aucune") === -1) {
       htmlBody +=
         '<div class="matiere-item">' +
@@ -2305,15 +2220,15 @@ function NOTIFIER_ADMIN_NOUVELLE_INSCRIPTION_(
     }
 
     htmlBody += "</div>";
-
+    
     htmlBody += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: emoji + " Inscription " + action + " - " + prenom + " " + nom,
       htmlBody: htmlBody,
     });
-
+    
     Logger.log("  ✅ Admin notifié");
   } catch (e) {
     Logger.log("  ⚠️ Erreur notification admin : " + e.toString());
@@ -2344,7 +2259,7 @@ function NOTIFIER_ADMIN_NOUVELLE_INSCRIPTION_(
  * 4. La formation de groupes
  * 5. La gestion des triggers
  *
- * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * ⚠️ IMPORTANT :
  * Exécutez cette fonction APRÈS CONFIG_INITIALE() et DEMARRER_SYSTEME()
  * Elle vous dira si tout fonctionne correctement
  *
@@ -2354,19 +2269,19 @@ function TEST_COMPLET() {
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("🧪 TEST COMPLET DU SYSTÈME");
   Logger.log("═══════════════════════════════════════════════════════");
-
+  
   var resultats = [];
   var nbTests = 0;
   var nbReussis = 0;
   var props = PropertiesService.getScriptProperties();
-
+  
   // Test 1: Properties
   Logger.log("\n🔑 Test 1/6 : Properties...");
   nbTests++;
   var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
   var calId = props.getProperty(CONFIG.PROPS.ID_CALENDAR);
   var version = props.getProperty(CONFIG.PROPS.VERSION);
-
+  
   if (ssId && calId && version) {
     resultats.push("✅ Test 1 : Properties OK");
     Logger.log("  ✅ Spreadsheet ID : " + ssId);
@@ -2377,7 +2292,7 @@ function TEST_COMPLET() {
     resultats.push("❌ Test 1 : Properties manquantes");
     Logger.log("  ❌ Exécutez CONFIG_INITIALE()");
   }
-
+  
   // Test 2: Spreadsheet
   Logger.log("\n📊 Test 2/6 : Spreadsheet...");
   nbTests++;
@@ -2391,7 +2306,7 @@ function TEST_COMPLET() {
         CONFIG.ONGLETS.CONFIG,
         CONFIG.ONGLETS.ARCHIVE,
       ];
-
+      
       var tousOK = true;
       for (var i = 0; i < onglets.length; i++) {
         var sheet = ss.getSheetByName(onglets[i]);
@@ -2400,7 +2315,7 @@ function TEST_COMPLET() {
           Logger.log("  ❌ Onglet manquant : " + onglets[i]);
         }
       }
-
+      
       if (tousOK) {
         resultats.push("✅ Test 2 : Spreadsheet OK (5 onglets)");
         Logger.log("  ✅ Tous les onglets présents");
@@ -2416,7 +2331,7 @@ function TEST_COMPLET() {
   } else {
     resultats.push("❌ Test 2 : Pas de Spreadsheet");
   }
-
+  
   // Test 3: Calendar
   Logger.log("\n📅 Test 3/6 : Calendar...");
   nbTests++;
@@ -2434,7 +2349,7 @@ function TEST_COMPLET() {
   } else {
     resultats.push("❌ Test 3 : Pas de Calendar");
   }
-
+  
   // Test 4: Triggers
   Logger.log("\n⏰ Test 4/6 : Triggers...");
   nbTests++;
@@ -2450,7 +2365,7 @@ function TEST_COMPLET() {
     resultats.push("⚠️ Test 4 : Aucun trigger installé");
     Logger.log("  ⚠️ Exécutez DEMARRER_SYSTEME()");
   }
-
+  
   // Test 5: Email
   Logger.log("\n📧 Test 5/6 : Configuration email...");
   nbTests++;
@@ -2462,13 +2377,13 @@ function TEST_COMPLET() {
     resultats.push("❌ Test 5 : Email admin non configuré");
     Logger.log("  ❌ Modifiez CONFIG.EMAIL_ADMIN");
   }
-
+  
   // Test 6: Formulaire
   Logger.log("\n📋 Test 6/6 : Formulaire actuel...");
   nbTests++;
   var formId = props.getProperty(CONFIG.PROPS.ID_FORM);
   var semaine = props.getProperty(CONFIG.PROPS.SEMAINE_FORM);
-
+  
   if (formId && semaine) {
     try {
       var form = FormApp.openById(formId);
@@ -2485,16 +2400,16 @@ function TEST_COMPLET() {
     resultats.push("⚠️ Test 6 : Aucun formulaire actif");
     Logger.log("  ⚠️ Exécutez DEMARRER_SYSTEME()");
   }
-
+  
   // Résumé
   Logger.log("\n═══════════════════════════════════════════════════════");
   Logger.log("📊 RÉSUMÉ : " + nbReussis + "/" + nbTests + " tests réussis");
   Logger.log("═══════════════════════════════════════════════════════");
-
+  
   var score = Math.round((nbReussis / nbTests) * 100);
   var statut = "";
   var couleurStatut = "";
-
+  
   if (score === 100) {
     statut = "✅ Système 100% opérationnel !";
     couleurStatut = "#27ae60";
@@ -2505,10 +2420,10 @@ function TEST_COMPLET() {
     statut = "❌ Système nécessite une attention urgente";
     couleurStatut = "#e74c3c";
   }
-
+  
   // Email HTML soigné
   var htmlBody = GENERER_EMAIL_HEADER_("Résultats des tests", "🧪");
-
+  
   htmlBody +=
     '<div class="card">' +
     "<h2>📊 Score global</h2>" +
@@ -2532,14 +2447,14 @@ function TEST_COMPLET() {
     "</div>";
 
   htmlBody += '<div class="card">' + "<h2>📋 Détails des tests</h2>";
-
+  
   for (var i = 0; i < resultats.length; i++) {
     var ligne = resultats[i];
     var classe = "";
     if (ligne.indexOf("✅") !== -1) classe = "success";
     else if (ligne.indexOf("⚠️") !== -1) classe = "warning";
     else if (ligne.indexOf("❌") !== -1) classe = "error";
-
+    
     htmlBody +=
       '<div class="info-line"><span class="' +
       classe +
@@ -2549,11 +2464,11 @@ function TEST_COMPLET() {
   }
 
   htmlBody += "</div>";
-
+  
   if (nbReussis < nbTests) {
     htmlBody +=
       '<div class="card">' + "<h2>🔧 Actions recommandées</h2>" + "<ul>";
-
+    
     if (resultats[0].indexOf("❌") !== -1) {
       htmlBody += "<li>Exécuter <code>CONFIG_INITIALE()</code></li>";
     }
@@ -2567,20 +2482,20 @@ function TEST_COMPLET() {
       htmlBody +=
         "<li>Modifier <code>CONFIG.EMAIL_ADMIN</code> dans le code</li>";
     }
-
+    
     htmlBody += "</ul></div>";
   }
-
+  
   htmlBody += GENERER_EMAIL_FOOTER_();
-
+  
   MailApp.sendEmail({
     to: CONFIG.EMAIL_ADMIN,
     subject: "🧪 Résultats des tests système - Score: " + score + "%",
     htmlBody: htmlBody,
   });
-
+  
   Logger.log("✅ Rapport envoyé par email");
-
+  
   return nbReussis === nbTests;
 }
 
@@ -2597,10 +2512,10 @@ function CALCULER_SEMAINE_ISO_(date) {
   var d = new Date(date.getTime());
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-
+  
   var premierJanvier = new Date(d.getFullYear(), 0, 1);
   var numeroSemaine = Math.ceil(((d - premierJanvier) / 86400000 + 1) / 7);
-
+  
   return {
     annee: d.getFullYear(),
     semaine: numeroSemaine,
@@ -2624,26 +2539,26 @@ function OBTENIR_LUNDI_SEMAINE_DEPUIS_NUMERO_(numSemaine) {
   if (!parts) {
     throw new Error("Format de semaine invalide : " + numSemaine);
   }
-
+  
   var annee = parseInt(parts[1], 10);
   var semaine = parseInt(parts[2], 10);
-
+  
   var premierJanvier = new Date(annee, 0, 1);
   var premierJeudi = new Date(annee, 0, 1);
   var jour = premierJanvier.getDay();
-
+  
   if (jour <= 4) {
     premierJeudi.setDate(premierJanvier.getDate() + (4 - jour));
   } else {
     premierJeudi.setDate(premierJanvier.getDate() + (11 - jour));
   }
-
+  
   var lundiSemaine1 = new Date(premierJeudi);
   lundiSemaine1.setDate(premierJeudi.getDate() - 3);
-
+  
   var lundiCible = new Date(lundiSemaine1);
   lundiCible.setDate(lundiSemaine1.getDate() + (semaine - 1) * 7);
-
+  
   return lundiCible;
 }
 
@@ -2669,11 +2584,11 @@ function NETTOYER_SYSTEME() {
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("⚠️ ATTENTION : Cette opération est DESTRUCTIVE !");
   Logger.log("");
-
+  
   try {
     var props = PropertiesService.getScriptProperties();
     var elementsSupprimes = [];
-
+    
     // 1. Supprimer les triggers
     Logger.log("⏰ Suppression des triggers...");
     var triggers = ScriptApp.getProjectTriggers();
@@ -2682,7 +2597,7 @@ function NETTOYER_SYSTEME() {
     }
     Logger.log("✅ " + triggers.length + " trigger(s) supprimé(s)");
     elementsSupprimes.push(triggers.length + " trigger(s)");
-
+    
     // 2. Supprimer le Spreadsheet
     var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
     if (ssId) {
@@ -2696,7 +2611,7 @@ function NETTOYER_SYSTEME() {
         Logger.log("⚠️ Spreadsheet déjà supprimé ou inaccessible");
       }
     }
-
+    
     // 3. Supprimer le Calendar
     var calId = props.getProperty(CONFIG.PROPS.ID_CALENDAR);
     if (calId) {
@@ -2710,7 +2625,7 @@ function NETTOYER_SYSTEME() {
         Logger.log("⚠️ Calendar déjà supprimé ou inaccessible");
       }
     }
-
+    
     // 4. Supprimer le formulaire actuel
     var formId = props.getProperty(CONFIG.PROPS.ID_FORM);
     if (formId) {
@@ -2724,23 +2639,23 @@ function NETTOYER_SYSTEME() {
         Logger.log("⚠️ Formulaire déjà supprimé ou inaccessible");
       }
     }
-
+    
     // 5. Effacer toutes les properties
     Logger.log("🔑 Suppression des properties...");
     props.deleteAllProperties();
     Logger.log("✅ Properties effacées");
     elementsSupprimes.push("Properties");
-
+    
     Logger.log("");
     Logger.log("═══════════════════════════════════════════════════════");
     Logger.log("✅ NETTOYAGE TERMINÉ");
     Logger.log("═══════════════════════════════════════════════════════");
     Logger.log("");
     Logger.log("🔄 Pour réinstaller : Exécutez CONFIG_INITIALE()");
-
+    
     // Email de confirmation
     var htmlBody = GENERER_EMAIL_HEADER_("Système nettoyé", "🧹");
-
+    
     htmlBody +=
       '<div class="card">' +
       "<h2>✅ Nettoyage terminé</h2>" +
@@ -2748,7 +2663,7 @@ function NETTOYER_SYSTEME() {
       "</div>";
 
     htmlBody += '<div class="card">' + "<h2>🗑️ Éléments supprimés</h2>";
-
+    
     for (var i = 0; i < elementsSupprimes.length; i++) {
       htmlBody +=
         '<div class="info-line">✅ ' + elementsSupprimes[i] + "</div>";
@@ -2766,9 +2681,9 @@ function NETTOYER_SYSTEME() {
       "<li>Exécuter <code>TEST_COMPLET()</code></li>" +
       "</ol>" +
       "</div>";
-
+    
     htmlBody += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: "🧹 Système nettoyé avec succès",
@@ -2777,7 +2692,7 @@ function NETTOYER_SYSTEME() {
   } catch (e) {
     Logger.log("❌ ERREUR : " + e.toString());
     Logger.log("Stack : " + e.stack);
-
+    
     var htmlBody = GENERER_EMAIL_HEADER_("Erreur de nettoyage", "❌");
     htmlBody +=
       '<div class="card">' +
@@ -2790,13 +2705,13 @@ function NETTOYER_SYSTEME() {
       "</div>" +
       "</div>";
     htmlBody += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: "❌ Erreur lors du nettoyage",
       htmlBody: htmlBody,
     });
-
+    
     throw e;
   }
 }
@@ -2808,41 +2723,41 @@ function ARCHIVER_ANCIENNES_REPONSES_() {
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("📦 ARCHIVAGE DES ANCIENNES RÉPONSES");
   Logger.log("═══════════════════════════════════════════════════════");
-
+  
   try {
     var props = PropertiesService.getScriptProperties();
     var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
     var ss = SpreadsheetApp.openById(ssId);
-
+    
     var sheetReponses = ss.getSheetByName(CONFIG.ONGLETS.REPONSES);
     var sheetArchive = ss.getSheetByName(CONFIG.ONGLETS.ARCHIVE);
-
+    
     var data = sheetReponses.getDataRange().getValues();
     var maintenant = new Date();
     var limiteArchivage = AJOUTER_JOURS_(maintenant, -84); // 12 semaines
-
+    
     var nbArchives = 0;
     var lignesASupprimer = [];
-
+    
     for (var i = data.length - 1; i >= 1; i--) {
       var timestamp = new Date(data[i][0]);
-
+      
       if (timestamp < limiteArchivage) {
         sheetArchive.appendRow(data[i]);
         lignesASupprimer.push(i + 1);
         nbArchives++;
       }
     }
-
+    
     for (var i = 0; i < lignesASupprimer.length; i++) {
       sheetReponses.deleteRow(lignesASupprimer[i]);
     }
-
+    
     Logger.log("✅ " + nbArchives + " réponse(s) archivée(s)");
-
+    
     if (nbArchives > 0) {
       var htmlBody = GENERER_EMAIL_HEADER_("Archivage effectué", "📦");
-
+      
       htmlBody +=
         '<div class="card">' +
         "<h2>📦 Archivage terminé</h2>" +
@@ -2858,9 +2773,9 @@ function ARCHIVER_ANCIENNES_REPONSES_() {
         "</div>" +
         '<p style="margin-top: 20px;">Les réponses archivées sont disponibles dans l\'onglet <strong>ARCHIVE</strong> du Spreadsheet.</p>' +
         "</div>";
-
+      
       htmlBody += GENERER_EMAIL_FOOTER_();
-
+      
       MailApp.sendEmail({
         to: CONFIG.EMAIL_ADMIN,
         subject: "📦 Archivage effectué - " + nbArchives + " réponse(s)",
@@ -2879,20 +2794,20 @@ function GENERER_RAPPORT_HEBDOMADAIRE_() {
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("📊 GÉNÉRATION DU RAPPORT HEBDOMADAIRE");
   Logger.log("═══════════════════════════════════════════════════════");
-
+  
   try {
     var props = PropertiesService.getScriptProperties();
     var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
     var ss = SpreadsheetApp.openById(ssId);
     var sheetReponses = ss.getSheetByName(CONFIG.ONGLETS.REPONSES);
-
+    
     var data = sheetReponses.getDataRange().getValues();
-
+    
     if (data.length <= 1) {
       Logger.log("⚠️ Aucune donnée à analyser");
       return;
     }
-
+    
     // Statistiques
     var nbReponses = data.length - 1;
     var utilisateursUniques = {};
@@ -2908,21 +2823,21 @@ function GENERER_RAPPORT_HEBDOMADAIRE_() {
       jeudiDiscord: 0,
       vendrediDiscord: 0,
     };
-
+    
     for (var i = 1; i < data.length; i++) {
       var email = data[i][CONFIG.COLONNES_REPONSES.EMAIL - 1];
       var niveau = data[i][CONFIG.COLONNES_REPONSES.NIVEAU - 1];
       var groupe = data[i][CONFIG.COLONNES_REPONSES.GROUPE - 1];
       var matiere1 = data[i][CONFIG.COLONNES_REPONSES.MATIERE1 - 1];
       var type1 = data[i][CONFIG.COLONNES_REPONSES.TYPE1 - 1];
-
+      
       utilisateursUniques[email] = true;
-
+      
       statsMatiere1[matiere1] = (statsMatiere1[matiere1] || 0) + 1;
       statsType1[type1] = (statsType1[type1] || 0) + 1;
       statsNiveau[niveau] = (statsNiveau[niveau] || 0) + 1;
       statsGroupe[groupe] = (statsGroupe[groupe] || 0) + 1;
-
+      
       if (data[i][CONFIG.COLONNES_REPONSES.JEUDI_CAMPUS - 1] === "Oui")
         statsCreneaux.jeudiCampus++;
       if (data[i][CONFIG.COLONNES_REPONSES.LUNDI_DISCORD - 1] === "Oui")
@@ -2936,19 +2851,19 @@ function GENERER_RAPPORT_HEBDOMADAIRE_() {
       if (data[i][CONFIG.COLONNES_REPONSES.VENDREDI_DISCORD - 1] === "Oui")
         statsCreneaux.vendrediDiscord++;
     }
-
+    
     var nbUtilisateursUniques = Object.keys(utilisateursUniques).length;
-
+    
     // Trouver les tops
     var topMatieres = Object.keys(statsMatiere1)
       .sort(function (a, b) {
-        return statsMatiere1[b] - statsMatiere1[a];
+      return statsMatiere1[b] - statsMatiere1[a];
       })
       .slice(0, 5);
-
+    
     // Générer l'email HTML
     var htmlBody = GENERER_EMAIL_HEADER_("Rapport hebdomadaire", "📊");
-
+    
     htmlBody +=
       '<div class="card">' +
       "<h2>📈 Vue d'ensemble</h2>" +
@@ -2973,12 +2888,12 @@ function GENERER_RAPPORT_HEBDOMADAIRE_() {
       "</div>";
 
     htmlBody += '<div class="card">' + "<h2>📚 Top 5 des matières</h2>";
-
+    
     for (var i = 0; i < topMatieres.length; i++) {
       var matiere = topMatieres[i];
       var nb = statsMatiere1[matiere];
       var pourcentage = Math.round((nb / nbReponses) * 100);
-
+      
       htmlBody +=
         '<div class="matiere-item">' +
         "<strong>" +
@@ -2997,11 +2912,11 @@ function GENERER_RAPPORT_HEBDOMADAIRE_() {
     htmlBody += "</div>";
 
     htmlBody += '<div class="card">' + "<h2>📊 Types d'activité</h2>";
-
+    
     for (var type in statsType1) {
       var nb = statsType1[type];
       var pourcentage = Math.round((nb / nbReponses) * 100);
-
+      
       htmlBody +=
         '<div class="info-line">' +
         '<span class="info-label">' +
@@ -3018,11 +2933,11 @@ function GENERER_RAPPORT_HEBDOMADAIRE_() {
     htmlBody += "</div>";
 
     htmlBody += '<div class="card">' + "<h2>🎓 Répartition niveaux</h2>";
-
+    
     for (var niveau in statsNiveau) {
       var nb = statsNiveau[niveau];
       var pourcentage = Math.round((nb / nbReponses) * 100);
-
+      
       htmlBody +=
         '<div class="info-line">' +
         '<span class="info-label">' +
@@ -3039,11 +2954,11 @@ function GENERER_RAPPORT_HEBDOMADAIRE_() {
     htmlBody += "</div>";
 
     htmlBody += '<div class="card">' + "<h2>👥 Répartition groupes</h2>";
-
+    
     for (var groupe in statsGroupe) {
       var nb = statsGroupe[groupe];
       var pourcentage = Math.round((nb / nbReponses) * 100);
-
+      
       htmlBody +=
         '<div class="info-line">' +
         '<span class="info-label">' +
@@ -3081,15 +2996,15 @@ function GENERER_RAPPORT_HEBDOMADAIRE_() {
       statsCreneaux.vendrediDiscord +
       "</strong> inscription(s)</div>" +
       "</div>";
-
+    
     htmlBody += GENERER_EMAIL_FOOTER_();
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: "📊 Rapport hebdomadaire - " + nbReponses + " réponse(s)",
       htmlBody: htmlBody,
     });
-
+    
     Logger.log("✅ Rapport généré et envoyé");
   } catch (e) {
     Logger.log("❌ ERREUR : " + e.toString());
@@ -3107,9 +3022,9 @@ function GENERER_RAPPORT_HEBDOMADAIRE_() {
  */
 function GENERER_DOCUMENTATION() {
   Logger.log("📚 Génération de la documentation...");
-
+  
   var htmlBody = GENERER_EMAIL_HEADER_("Documentation système", "📚");
-
+  
   htmlBody +=
     '<div class="card">' +
     "<h2>📚 Documentation complète</h2>" +
@@ -3199,15 +3114,15 @@ function GENERER_DOCUMENTATION() {
     "<li>Contacter l'administrateur</li>" +
     "</ol>" +
     "</div>";
-
+  
   htmlBody += GENERER_EMAIL_FOOTER_();
-
+  
   MailApp.sendEmail({
     to: CONFIG.EMAIL_ADMIN,
     subject: "📚 Documentation système v" + CONFIG.VERSION,
     htmlBody: htmlBody,
   });
-
+  
   Logger.log("✅ Documentation envoyée");
 }
 
@@ -3224,13 +3139,13 @@ function CREER_FORMULAIRE_SEMAINE_ACTUELLE_() {
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("📝 CRÉATION FORMULAIRE SEMAINE ACTUELLE");
   Logger.log("═══════════════════════════════════════════════════════");
-
+  
   try {
     var maintenant = new Date();
     var lundiSemaine = OBTENIR_LUNDI_SEMAINE_(maintenant);
-
+    
     CREER_FORMULAIRE_SEMAINE_(lundiSemaine);
-
+    
     Logger.log("✅ Formulaire créé avec succès");
   } catch (e) {
     Logger.log("❌ ERREUR : " + e.toString());
@@ -3246,10 +3161,10 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
     var props = PropertiesService.getScriptProperties();
     var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
     var ss = SpreadsheetApp.openById(ssId);
-
+    
     var infoSemaine = CALCULER_SEMAINE_ISO_(lundiSemaine);
     var numSemaine = infoSemaine.annee + "W" + ZERO_PAD_(infoSemaine.semaine);
-
+    
     var dimanche = AJOUTER_JOURS_(lundiSemaine, 6);
     var dateDebut = Utilities.formatDate(
       lundiSemaine,
@@ -3271,12 +3186,12 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
       " - " +
       dateFin +
       ")";
-
+    
     Logger.log("📝 Création : " + titre);
-
+    
     var form = FormApp.create(titre);
     var formId = form.getId();
-
+    
     // Configuration générale
     var description =
       "🎓 Inscris-toi aux sessions de groupe d'étude de la semaine " +
@@ -3287,9 +3202,9 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
       " au " +
       dateFin +
       "\n\n" +
-      "⚠️ Une seule inscription par semaine.\n" +
-      "Pour modifier : renvoie le formulaire avec la même adresse email.";
-
+                      "⚠️ Une seule inscription par semaine.\n" +
+                      "Pour modifier : renvoie le formulaire avec la même adresse email.";
+    
     form.setDescription(description);
     form.setConfirmationMessage(
       "✅ Inscription enregistrée ! Tu recevras les invitations Calendar."
@@ -3298,133 +3213,133 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
     form.setLimitOneResponsePerUser(false);
     form.setAllowResponseEdits(false);
     form.setShowLinkToRespondAgain(true);
-
+    
     // Lier au Spreadsheet
     form.setDestination(FormApp.DestinationType.SPREADSHEET, ssId);
-
+    
     // === SECTION 1 : IDENTITÉ ===
     form.addPageBreakItem().setTitle("👤 Qui es-tu ?");
-
+    
     form
       .addTextItem()
       .setTitle("Prénom")
       .setHelpText("Ton prénom réel")
       .setRequired(true);
-
+    
     form
       .addTextItem()
       .setTitle("Nom")
       .setHelpText("Ton nom de famille réel")
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Niveau d'études")
       .setChoiceValues(CONFIG.NIVEAUX)
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Groupe de classe")
       .setChoiceValues(CONFIG.GROUPES)
       .setRequired(true);
-
-    // === SECTION 2 : MATIÈRES (4 CHOIX POSSIBLES) ===
+    
+        // === SECTION 2 : MATIÈRES (4 CHOIX POSSIBLES) ===
     form.addPageBreakItem().setTitle("📚 Quelles matières ? (Maximum 4)");
-
+    
     // MATIÈRE 1 (OBLIGATOIRE)
     form
       .addMultipleChoiceItem()
       .setTitle("Matière 1")
       .setChoiceValues(CONFIG.MATIERES)
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Type d'activité pour Matière 1")
       .setChoiceValues(CONFIG.TYPES_ACTIVITE)
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Niveau d'accompagnement pour Matière 1")
       .setChoiceValues(CONFIG.NIVEAUX_ACCOMPAGNEMENT)
       .setRequired(true);
-
+    
     // MATIÈRE 2 (OPTIONNELLE)
     var matieres2 = ["Aucune autre matière"].concat(CONFIG.MATIERES);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Matière 2 (optionnelle)")
       .setChoiceValues(matieres2)
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Type d'activité pour Matière 2")
       .setChoiceValues(CONFIG.TYPES_ACTIVITE)
       .setRequired(false);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Niveau d'accompagnement pour Matière 2")
       .setChoiceValues(CONFIG.NIVEAUX_ACCOMPAGNEMENT)
       .setRequired(false);
-
+    
     // MATIÈRE 3 (OPTIONNELLE)
     form
       .addMultipleChoiceItem()
       .setTitle("Matière 3 (optionnelle)")
       .setChoiceValues(matieres2)
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Type d'activité pour Matière 3")
       .setChoiceValues(CONFIG.TYPES_ACTIVITE)
       .setRequired(false);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Niveau d'accompagnement pour Matière 3")
       .setChoiceValues(CONFIG.NIVEAUX_ACCOMPAGNEMENT)
       .setRequired(false);
-
+    
     // MATIÈRE 4 (OPTIONNELLE)
     form
       .addMultipleChoiceItem()
       .setTitle("Matière 4 (optionnelle)")
       .setChoiceValues(matieres2)
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Type d'activité pour Matière 4")
       .setChoiceValues(CONFIG.TYPES_ACTIVITE)
       .setRequired(false);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("Niveau d'accompagnement pour Matière 4")
       .setChoiceValues(CONFIG.NIVEAUX_ACCOMPAGNEMENT)
       .setRequired(false);
-
+    
     // === SECTION 3 : CRÉNEAUX ===
     form
       .addPageBreakItem()
       .setTitle("📅 Créneaux disponibles")
       .setHelpText("Coche tous les créneaux où tu peux venir");
-
+    
     var jeudi = AJOUTER_JOURS_(lundiSemaine, 3);
     var dateJeudi = Utilities.formatDate(jeudi, CONFIG.FUSEAU_HORAIRE, "dd/MM");
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("🏫 Jeudi " + dateJeudi + " (13h-17h) - Campus")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     var dateLundi = Utilities.formatDate(
       lundiSemaine,
       CONFIG.FUSEAU_HORAIRE,
@@ -3436,16 +3351,16 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
       .setTitle("💬 Lundi " + dateLundi + " (16h45-19h) - Discord")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     var mardi = AJOUTER_JOURS_(lundiSemaine, 1);
     var dateMardi = Utilities.formatDate(mardi, CONFIG.FUSEAU_HORAIRE, "dd/MM");
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("💬 Mardi " + dateMardi + " (16h45-19h) - Discord")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     var mercredi = AJOUTER_JOURS_(lundiSemaine, 2);
     var dateMercredi = Utilities.formatDate(
       mercredi,
@@ -3458,13 +3373,13 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
       .setTitle("💬 Mercredi " + dateMercredi + " (16h45-19h) - Discord")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     form
       .addMultipleChoiceItem()
       .setTitle("💬 Jeudi " + dateJeudi + " (16h45-19h) - Discord")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     var vendredi = AJOUTER_JOURS_(lundiSemaine, 4);
     var dateVendredi = Utilities.formatDate(
       vendredi,
@@ -3477,7 +3392,7 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
       .setTitle("💬 Vendredi " + dateVendredi + " (16h45-19h) - Discord")
       .setChoiceValues(["Oui", "Non"])
       .setRequired(true);
-
+    
     // === COMMENTAIRE (OPTIONNEL) ===
     form
       .addParagraphTextItem()
@@ -3488,16 +3403,16 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
     // Sauvegarder les IDs
     props.setProperty(CONFIG.PROPS.ID_FORM, formId);
     props.setProperty(CONFIG.PROPS.SEMAINE_FORM, numSemaine);
-
+    
     Logger.log("✅ Formulaire créé : " + formId);
     Logger.log("✅ URL : " + form.getPublishedUrl());
-
+    
     ECRIRE_AUDIT_("FORMULAIRE_CREE", {
       semaine: numSemaine,
       formId: formId,
       url: form.getPublishedUrl(),
     });
-
+    
     return form;
   } catch (e) {
     Logger.log("❌ ERREUR création formulaire : " + e.toString());
@@ -3512,22 +3427,22 @@ function TRIGGER_CREATION_FORMULAIRE_HEBDO_() {
   Logger.log("═══════════════════════════════════════════════════════");
   Logger.log("⏰ TRIGGER HEBDOMADAIRE DÉCLENCHÉ");
   Logger.log("═══════════════════════════════════════════════════════");
-
+  
   try {
     var maintenant = new Date();
     var lundiProchain = OBTENIR_LUNDI_SEMAINE_(AJOUTER_JOURS_(maintenant, 1));
-
+    
     Logger.log(
       "📅 Création du formulaire pour le lundi : " +
         Utilities.formatDate(lundiProchain, CONFIG.FUSEAU_HORAIRE, "dd/MM/yyyy")
     );
-
+    
     CREER_FORMULAIRE_SEMAINE_(lundiProchain);
-
+    
     Logger.log("✅ Formulaire hebdomadaire créé");
   } catch (e) {
     Logger.log("❌ ERREUR trigger : " + e.toString());
-
+    
     MailApp.sendEmail({
       to: CONFIG.EMAIL_ADMIN,
       subject: "❌ Erreur création formulaire hebdo",
@@ -3580,7 +3495,7 @@ function PROGRAMMER_PLANIFICATION_QUOTIDIENNE_MIDI_() {
  * 4. Forme des groupes de 2-4 personnes avec matières communes
  * 5. Crée les événements calendrier et envoie les invitations
  *
- * ⚠️ IMPORTANT POUR LES DÉBUTANTS :
+ * ⚠️ IMPORTANT :
  * Cette fonction est appelée automatiquement par un trigger quotidien
  * Elle ignore les week-ends et ne traite que les jours ouvrables
  *
@@ -4365,6 +4280,93 @@ function TEST_RAPPORT_HEBDO_() {
 }
 
 /**
+ * 🔧 NETTOYER_DONNEES_FICTIVES_TEST_()
+ * -----------------------------------------------------------------
+ * Supprime les données générées par TEST_GENERATION_INVITATIONS() :
+ * - Lignes de l'onglet Réponses pour les emails de test
+ * - Lignes de l'onglet GROUPES contenant ces emails
+ * - Événements Calendar référencés par EventId pour ces lignes
+ */
+function NETTOYER_DONNEES_FICTIVES_TEST_() {
+  Logger.log("🧹 Nettoyage des données fictives de test…");
+
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
+    var calId = props.getProperty(CONFIG.PROPS.ID_CALENDAR);
+    if (!ssId) {
+      Logger.log("❌ Pas de Spreadsheet configuré");
+      return;
+    }
+
+    var emailsTest = {
+      "alice@test.com": true,
+      "bob@test.com": true,
+      "carla@test.com": true,
+    };
+
+    var ss = SpreadsheetApp.openById(ssId);
+
+    // 1) Nettoyage onglet Réponses
+    var sheetRep = ss.getSheetByName(CONFIG.ONGLETS.REPONSES);
+    if (sheetRep && sheetRep.getLastRow() > 1) {
+      var dataRep = sheetRep.getDataRange().getValues();
+      var colEmail = CONFIG.COLONNES_REPONSES.EMAIL - 1;
+      var colComment = CONFIG.COLONNES_REPONSES.COMMENTAIRE - 1;
+      var supprimées = 0;
+      for (var i = dataRep.length - 1; i >= 1; i--) {
+        var email = String(dataRep[i][colEmail] || "").toLowerCase();
+        var comment = String(dataRep[i][colComment] || "");
+        var isTest = emailsTest[email] || /\btest\b/i.test(comment);
+        if (isTest) {
+          sheetRep.deleteRow(i + 1);
+          supprimées++;
+        }
+      }
+      Logger.log("✅ Réponses supprimées: " + supprimées);
+    }
+
+    // 2) Nettoyage onglet GROUPES + Calendar
+    var sheetGroupes = ss.getSheetByName("GROUPES");
+    if (sheetGroupes && sheetGroupes.getLastRow() > 1) {
+      var cal = calId ? CalendarApp.getCalendarById(calId) : null;
+      var dataG = sheetGroupes.getDataRange().getValues();
+      var supGroupes = 0;
+      for (var r = dataG.length - 1; r >= 1; r--) {
+        var participantEmails = String(dataG[r][5] || ""); // ParticipantEmails col 6
+        var hasTest = participantEmails
+          .toLowerCase()
+          .split(";")
+          .some(function (m) {
+            return emailsTest[m.trim()];
+          });
+        if (hasTest) {
+          // tenter suppression de l'événement si possible
+          var eventId = String(dataG[r][4] || ""); // EventId col 5
+          if (cal && eventId) {
+            try {
+              var ev = cal.getEventById(eventId);
+              if (ev) ev.deleteEvent();
+            } catch (e) {
+              Logger.log("⚠️ Impossible de supprimer l'événement " + eventId + ": " + e);
+            }
+          }
+          sheetGroupes.deleteRow(r + 1);
+          supGroupes++;
+        }
+      }
+      Logger.log("✅ GROUPES nettoyés: " + supGroupes);
+    }
+
+    ECRIRE_AUDIT_("NETTOYAGE_TEST", { status: "OK" });
+    Logger.log("🧹 Nettoyage terminé");
+  } catch (e) {
+    Logger.log("❌ Erreur nettoyage test: " + e);
+    ECRIRE_AUDIT_("NETTOYAGE_TEST_ERR", e.toString());
+  }
+}
+
+/**
  * 🔧 FONCTION DE MIGRATION : Corriger les en-têtes de l'onglet Réponses
  *
  * Cette fonction corrige les en-têtes d'un onglet Réponses existant
@@ -4417,7 +4419,18 @@ function CORRIGER_ENTETES_REPONSES_() {
     }
 
     if (correctionNecessaire) {
-      Logger.log("🔧 Correction des en-têtes nécessaire");
+      // GARDE-FOU: si des données existent (lignes > 1), ne rien modifier
+      var lastRow = sheetReponses.getLastRow();
+      if (lastRow > 1) {
+        Logger.log(
+          "🛡️ Garde-fou: en-têtes non conformes mais des données existent (" +
+            (lastRow - 1) +
+            ") → Aucune modification appliquée."
+        );
+        return;
+      }
+
+      Logger.log("🔧 Correction des en-têtes nécessaire (feuille vide)");
 
       // Effacer la première ligne et la recréer
       sheetReponses.getRange(1, 1, 1, sheetReponses.getLastColumn()).clear();
@@ -4566,21 +4579,31 @@ function MIGRER_STRUCTURE_SPREADSHEET_() {
     var sheetArchive = ss.getSheetByName(CONFIG.ONGLETS.ARCHIVE);
     if (sheetArchive) {
       Logger.log("🔧 Correction de l'onglet Archive");
-      VERIFIER_ET_INSERER_COLONNES_MANQUANTES_(
-        sheetArchive,
-        CONFIG.HEADERS_REPONSES.length
-      );
+      // GARDE-FOU: ne modifier les en-têtes QUE si la feuille est vide (1 seule ligne)
+      var lastRowArchive = sheetArchive.getLastRow();
+      if (lastRowArchive > 1) {
+        Logger.log(
+          "🛡️ Garde-fou Archive: données présentes (" +
+            (lastRowArchive - 1) +
+            ") → aucun changement sur les en-têtes."
+        );
+      } else {
+        VERIFIER_ET_INSERER_COLONNES_MANQUANTES_(
+          sheetArchive,
+          CONFIG.HEADERS_REPONSES.length
+        );
 
-      // Appliquer les en-têtes corrects
-      sheetArchive
-        .getRange(1, 1, 1, CONFIG.HEADERS_REPONSES.length)
-        .setValues([CONFIG.HEADERS_REPONSES])
-        .setFontWeight("bold")
-        .setBackground("#9e9e9e")
-        .setFontColor("#ffffff");
+        // Appliquer les en-têtes corrects
+        sheetArchive
+          .getRange(1, 1, 1, CONFIG.HEADERS_REPONSES.length)
+          .setValues([CONFIG.HEADERS_REPONSES])
+          .setFontWeight("bold")
+          .setBackground("#9e9e9e")
+          .setFontColor("#ffffff");
 
-      sheetArchive.setFrozenRows(1);
-      sheetArchive.autoResizeColumns(1, CONFIG.HEADERS_REPONSES.length);
+        sheetArchive.setFrozenRows(1);
+        sheetArchive.autoResizeColumns(1, CONFIG.HEADERS_REPONSES.length);
+      }
     }
 
     Logger.log("✅ Migration complète terminée avec succès");
@@ -4729,7 +4752,7 @@ function TEST_SANS_EMAILS() {
  * ═══════════════════════════════════════════════════════════════════════
  * ✅ FIN DU CODE
  * ═══════════════════════════════════════════════════════════════════════
- *
+ * 
  * Version : 3.1.0
  * Compatible : Google Apps Script (V8 Runtime)
 
@@ -4746,6 +4769,6 @@ function TEST_SANS_EMAILS() {
  * 3. Exécuter DEMARRER_SYSTEME()
  * 4. Exécuter TEST_COMPLET()
  * 5. Partager le lien du formulaire aux étudiants
- *
+ * 
  * ═══════════════════════════════════════════════════════════════════════
  */
