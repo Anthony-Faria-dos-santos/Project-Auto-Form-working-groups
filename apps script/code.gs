@@ -739,6 +739,19 @@ function CREER_SPREADSHEET_() {
 
     sheetGroupes.setFrozenRows(1);
     sheetGroupes.autoResizeColumns(1, headersGroupes.length);
+
+  // === ONGLET ADMIN (contrôles manuels) ===
+  var sheetAdmin = ss.insertSheet("ADMIN");
+  sheetAdmin.getRange(1, 1).setValue("Action").setFontWeight("bold");
+  sheetAdmin.getRange(1, 2).setValue("Paramètre").setFontWeight("bold");
+  sheetAdmin.getRange(2, 1).setValue("Relancer batch aujourd'hui");
+  sheetAdmin.getRange(3, 1).setValue("Relancer batch pour date (yyyy-mm-dd)");
+  sheetAdmin.getRange(3, 2).setValue(Utilities.formatDate(new Date(), CONFIG.FUSEAU_HORAIRE, "yyyy-MM-dd"));
+  // Cases à cocher en A2 et A3
+  sheetAdmin.getRange(2, 1).insertCheckboxes();
+  sheetAdmin.getRange(3, 1).insertCheckboxes();
+  sheetAdmin.setFrozenRows(1);
+  sheetAdmin.autoResizeColumns(1, 2);
     
     // === PERMISSIONS ===
     var file = DriveApp.getFileById(ssId);
@@ -1039,6 +1052,23 @@ function DEMARRER_SYSTEME() {
 
     // Trigger quotidien planification groupes à midi
     PROGRAMMER_PLANIFICATION_QUOTIDIENNE_MIDI_();
+
+    // Poller ADMIN toutes les 5 minutes pour cases à cocher
+    try {
+      var triggersAdmin = ScriptApp.getProjectTriggers();
+      for (var k = 0; k < triggersAdmin.length; k++) {
+        if (triggersAdmin[k].getHandlerFunction() === "POLLER_BATCH_ADMIN_") {
+          ScriptApp.deleteTrigger(triggersAdmin[k]);
+        }
+      }
+      ScriptApp.newTrigger("POLLER_BATCH_ADMIN_")
+        .timeBased()
+        .everyMinutes(5)
+        .create();
+      Logger.log("✅ Poller ADMIN installé (toutes les 5 minutes)");
+    } catch (e) {
+      Logger.log("⚠️ Installation poller ADMIN: " + e.toString());
+    }
     
     Logger.log("");
     Logger.log("═══════════════════════════════════════════════════════");
@@ -3991,6 +4021,173 @@ function NOTIFIER_ADMIN_GROUPES_JOUR_(resumeHtml, dateISO) {
     subject: "📊 Planification groupes " + dateISO,
     htmlBody: html,
   });
+}
+
+/**
+ * Relance le batch quotidien pour la date du jour (comme à 12h).
+ */
+function LANCER_BATCH_MIDI_MANUEL_AUJOURDHUI_() {
+  try {
+    var tz = CONFIG.FUSEAU_HORAIRE;
+    var today = new Date();
+    EXECUTER_BATCH_POUR_DATE_(today);
+    SpreadsheetApp.getUi().alert(
+      "Batch relancé pour le " +
+        Utilities.formatDate(today, tz, "yyyy-MM-dd") +
+        "."
+    );
+  } catch (e) {
+    Logger.log("❌ Batch manuel ajd err: " + e);
+    SpreadsheetApp.getUi().alert("Erreur: " + e);
+  }
+}
+
+/**
+ * Demande une date (yyyy-mm-dd) et relance le batch pour cette date.
+ */
+function LANCER_BATCH_MIDI_MANUEL_DATE_() {
+  var ui = SpreadsheetApp.getUi();
+  var resp = ui.prompt(
+    "Relancer le batch",
+    "Entrez une date au format yyyy-mm-dd",
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (resp.getSelectedButton() !== ui.Button.OK) return;
+  var texte = resp.getResponseText().trim();
+  var parts = texte.split("-");
+  if (parts.length !== 3) {
+    ui.alert("Format invalide. Exemple: 2025-10-06");
+    return;
+  }
+  var y = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10) - 1; // 0-based
+  var d = parseInt(parts[2], 10);
+  var dateJS = new Date(y, m, d, 12, 0, 0, 0);
+  EXECUTER_BATCH_POUR_DATE_(dateJS);
+  ui.alert("Batch relancé pour le " + texte + ".");
+}
+
+/**
+ * Exécute la planification des groupes pour une date donnée (équivalent 12h).
+ * Ne tient pas compte du week-end (permet de rejouer au besoin).
+ */
+function EXECUTER_BATCH_POUR_DATE_(dateJS) {
+  try {
+    var tz = CONFIG.FUSEAU_HORAIRE;
+    var dateISO = Utilities.formatDate(dateJS, tz, "yyyy-MM-dd");
+
+    var slots = OBTENIR_SLOTS_DU_JOUR_(dateJS);
+    if (slots.length === 0) {
+      Logger.log("Aucun créneau pour cette date: " + dateISO);
+      return;
+    }
+
+    var ssId = PropertiesService.getScriptProperties().getProperty(
+      CONFIG.PROPS.ID_SPREADSHEET
+    );
+    var ss = SpreadsheetApp.openById(ssId);
+    // S’auto-réparer si ADMIN absent
+    var sheetAdmin = ss.getSheetByName("ADMIN");
+    if (!sheetAdmin) {
+      sheetAdmin = ss.insertSheet("ADMIN");
+      sheetAdmin.getRange(1, 1).setValue("Action").setFontWeight("bold");
+      sheetAdmin.getRange(1, 2).setValue("Paramètre").setFontWeight("bold");
+      sheetAdmin.getRange(2, 1).setValue("Relancer batch aujourd'hui");
+      sheetAdmin.getRange(3, 1).setValue("Relancer batch pour date (yyyy-mm-dd)");
+      sheetAdmin.getRange(3, 2).setValue(
+        Utilities.formatDate(new Date(), CONFIG.FUSEAU_HORAIRE, "yyyy-MM-dd")
+      );
+      sheetAdmin.getRange(2, 1).insertCheckboxes();
+      sheetAdmin.getRange(3, 1).insertCheckboxes();
+      sheetAdmin.setFrozenRows(1);
+      sheetAdmin.autoResizeColumns(1, 2);
+    }
+
+    var sheetRep = ss.getSheetByName(CONFIG.ONGLETS.REPONSES);
+    var sheetGroupes = ss.getSheetByName("GROUPES");
+    var calId = PropertiesService.getScriptProperties().getProperty(
+      CONFIG.PROPS.ID_CALENDAR
+    );
+
+    var resume = '<div class="card"><h2>Batch manuel ' + dateISO + "</h2>";
+
+    slots.forEach(function (slotKey) {
+      var candidats = CHARGER_CANDIDATS_POUR_SLOT_(sheetRep, slotKey);
+      var groupes = FORMER_GROUPES_POUR_SLOT_(candidats);
+
+      resume += "<h3>" + slotKey + " — " + groupes.length + " groupe(s)</h3>";
+      groupes.forEach(function (g, idx) {
+        UPSERT_EVENEMENT_ET_PERSISTANCE_(
+          dateISO,
+          slotKey,
+          g.subject,
+          idx + 1,
+          g.participants,
+          calId,
+          sheetGroupes
+        );
+        ENVOYER_EMAIL_INVITATION_GROUPE_(g, dateISO, slotKey);
+
+        resume +=
+          "<p><strong>G" +
+          (idx + 1) +
+          " (" +
+          g.participants.length +
+          ")</strong> : " +
+          g.subject +
+          "</p>";
+      });
+    });
+
+    resume += "</div>";
+    NOTIFIER_ADMIN_GROUPES_JOUR_(resume, dateISO);
+    ECRIRE_AUDIT_("BATCH_MANUEL_OK", { date: dateISO, slots: slots.length });
+  } catch (e) {
+    Logger.log("❌ Batch manuel error: " + e);
+    ECRIRE_AUDIT_("BATCH_MANUEL_ERR", e.toString());
+  }
+}
+
+/**
+ * Vérifie l’onglet ADMIN et exécute les actions si cochées, puis décoche.
+ */
+function POLLER_BATCH_ADMIN_() {
+  try {
+    var ssId = PropertiesService.getScriptProperties().getProperty(
+      CONFIG.PROPS.ID_SPREADSHEET
+    );
+    if (!ssId) return;
+    var ss = SpreadsheetApp.openById(ssId);
+    var admin = ss.getSheetByName("ADMIN");
+    if (!admin) return;
+
+    var tz = CONFIG.FUSEAU_HORAIRE;
+    var today = new Date();
+
+    // A2: relancer aujourd’hui (case à cocher)
+    var relancerAuj = admin.getRange(2, 1).getValue() === true;
+    if (relancerAuj) {
+      EXECUTER_BATCH_POUR_DATE_(today);
+      admin.getRange(2, 1).setValue(false);
+    }
+
+    // A3: relancer pour date, B3: yyyy-mm-dd
+    var relancerDate = admin.getRange(3, 1).getValue() === true;
+    if (relancerDate) {
+      var txt = String(admin.getRange(3, 2).getValue() || "").trim();
+      var parts = txt.split("-");
+      if (parts.length === 3) {
+        var y = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10) - 1;
+        var d = parseInt(parts[2], 10);
+        var dateJS = new Date(y, m, d, 12, 0, 0, 0);
+        EXECUTER_BATCH_POUR_DATE_(dateJS);
+      }
+      admin.getRange(3, 1).setValue(false);
+    }
+  } catch (e) {
+    Logger.log("⚠️ Poller ADMIN error: " + e);
+  }
 }
 
 // Mise à jour de PLANIFIER_GROUPES_DU_JOUR_ pour appeler les fonctions ci-dessus
