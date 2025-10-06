@@ -4661,6 +4661,13 @@ function EXECUTER_BATCH_POUR_DATE_(dateJS) {
       }
 
       resume += "<h3>" + slotKey + " — " + groupes.length + " groupe(s)</h3>";
+      
+      // Vérification : ne traiter que s'il y a des groupes
+      if (groupes.length === 0) {
+        resume += "<p><em>Aucun groupe formé (besoin de minimum 2 participants)</em></p>";
+        Logger.log("[Diag] " + slotKey + ": Aucun groupe formé - candidats insuffisants");
+      }
+      
       groupes.forEach(function (g, idx) {
         UPSERT_EVENEMENT_ET_PERSISTANCE_(
           dateISO,
