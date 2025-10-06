@@ -4365,6 +4365,14 @@ function UPSERT_EVENEMENT_ET_PERSISTANCE_(
   var title = "📚 " + subject + " - " + participants.length + " participants";
   var description = GENERER_DESCRIPTION_EVENEMENT_(participants, subject);
 
+  // Extraction des emails et noms
+  var emails = participants.map(function (p) {
+    return p.email;
+  });
+  var noms = participants.map(function (p) {
+    return p.prenom + " " + p.nom;
+  });
+
   var eventId = "";
   if (ligne !== -1 && data[ligne - 1][4]) {
     // update event
