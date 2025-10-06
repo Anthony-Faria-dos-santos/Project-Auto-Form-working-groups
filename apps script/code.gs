@@ -3631,8 +3631,6 @@ function PLANIFIER_GROUPES_DU_JOUR_() {
         " …"
     );
 
-    // TODO: charger données, former groupes, créer/updater events, envoyer emails
-
     ECRIRE_AUDIT_("BATCH_MIDI", {
       date: today,
       statut: "TODO",
@@ -3641,18 +3639,6 @@ function PLANIFIER_GROUPES_DU_JOUR_() {
     Logger.log("❌ ERREUR batch midi : " + e.toString());
     ECRIRE_AUDIT_("ERREUR_BATCH_MIDI", e.toString());
   }
-}
-
-// ------- Fonctions utilitaires (à implémenter) ---------
-
-function CHARGER_CANDIDATS_POUR_SLOT_(sheet, slotKey) {
-  // TODO: retourner un tableau d'objets candidat
-  return [];
-}
-
-function FORMER_GROUPES_POUR_SLOT_(candidats) {
-  // TODO: logique de regroupement
-  return [];
 }
 
 /**
@@ -3715,27 +3701,6 @@ function GENERER_DESCRIPTION_EVENEMENT_(participants, subject) {
   return description;
 }
 
-function UPSERT_EVENEMENT_ET_PERSISTANCE_(
-  dateISO,
-  slotKey,
-  subject,
-  groupIndex,
-  participants,
-  calId,
-  sheetGroupes
-) {
-  // TODO: création ou mise à jour d'un événement et de la ligne GROUPES
-  return ""; // EventId
-}
-
-function ENVOYER_EMAIL_INVITATION_GROUPE_(groupe, dateISO, slotKey) {
-  // TODO: email HTML aux participants
-}
-
-function NOTIFIER_ADMIN_GROUPES_JOUR_(resume) {
-  // TODO: email admin récapitulatif
-}
-
 /** =====================================================================
  * SLOT → COLONNE Spreadsheet (réponses Oui/Non)
  * Permet de savoir quelle colonne de Réponses correspond à quel créneau.
@@ -3748,6 +3713,11 @@ var SLOT_COLONNE = {
   JEUDI_DISCORD: CONFIG.COLONNES_REPONSES.JEUDI_DISCORD,
   VENDREDI_DISCORD: CONFIG.COLONNES_REPONSES.VENDREDI_DISCORD,
 };
+
+// Vérification que SLOT_COLONNE est bien défini
+if (typeof SLOT_COLONNE === 'undefined') {
+  Logger.log("❌ ERREUR: SLOT_COLONNE n'est pas défini !");
+}
 
 /**
  * Retourne la clé(s) de créneau correspondant au jour donné.
@@ -3788,19 +3758,18 @@ function CHARGER_CANDIDATS_POUR_SLOT_(sheetReponses, slotKey, dateRef) {
   Logger.log("[Diag] slotKey: " + slotKey);
   Logger.log("[Diag] dateRef: " + dateRef);
   Logger.log("[Diag] Total lignes: " + data.length);
-
-  // Pour le batch 12h : traiter TOUTES les réponses (pas de filtre par semaine d'inscription)
-  // Les inscriptions peuvent être faites le dimanche pour la semaine suivante
-  var ref = dateRef || new Date();
-  var lundiSemaine = OBTENIR_LUNDI_SEMAINE_(ref);
-  var dimancheSemaine = AJOUTER_JOURS_(lundiSemaine, 6);
-  Logger.log("[Diag] Semaine cible: " + lundiSemaine + " à " + dimancheSemaine);
   Logger.log("[Diag] Mode: traiter TOUTES les réponses (pas de filtre par date d'inscription)");
 
-  var colSlot = CONFIG.SLOT_COLONNE[slotKey];
+  // Vérification de sécurité
+  if (typeof SLOT_COLONNE === 'undefined') {
+    Logger.log("[Diag] ERREUR: SLOT_COLONNE n'est pas défini !");
+    return [];
+  }
+  
+  var colSlot = SLOT_COLONNE[slotKey];
   if (!colSlot) {
-    Logger.log("[Diag] ERREUR: slotKey '" + slotKey + "' non trouvé dans CONFIG.SLOT_COLONNE");
-    Logger.log("[Diag] Slots disponibles: " + Object.keys(CONFIG.SLOT_COLONNE).join(", "));
+    Logger.log("[Diag] ERREUR: slotKey '" + slotKey + "' non trouvé dans SLOT_COLONNE");
+    Logger.log("[Diag] Slots disponibles: " + Object.keys(SLOT_COLONNE).join(", "));
     return [];
   }
   Logger.log("[Diag] Colonne slot: " + colSlot);
@@ -4014,13 +3983,6 @@ function UPSERT_EVENEMENT_ET_PERSISTANCE_(
   );
   var end = new Date(start);
   end.setHours(Math.floor(creneau.fin), Math.round((creneau.fin % 1) * 60));
-
-  var emails = participants.map(function (p) {
-    return p.email;
-  });
-  var noms = participants.map(function (p) {
-    return p.prenom + " " + p.nom;
-  });
 
   var title = "📚 " + subject + " - " + participants.length + " participants";
   var description = GENERER_DESCRIPTION_EVENEMENT_(participants, subject);
