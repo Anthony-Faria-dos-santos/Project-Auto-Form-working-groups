@@ -38,6 +38,9 @@ var CONFIG = {
   COULEUR_JEUDI: "9", // Couleur pour les sessions campus (jeudi)
   COULEUR_DISCORD: "11", // Couleur pour les sessions Discord
 
+  // 🔗 LIEN DISCORD
+  DISCORD_LINK: "https://discord.com/channels/1414939127643901975/1417186619215315127",
+
   // 🗄️ NOMS DES ONGLETS DANS LE SPREADSHEET
   // Ces noms sont utilisés pour créer et accéder aux feuilles
   ONGLETS: {
@@ -3652,6 +3655,66 @@ function FORMER_GROUPES_POUR_SLOT_(candidats) {
   return [];
 }
 
+/**
+ * 🎨 GENERER_DESCRIPTION_EVENEMENT_()
+ * -----------------------------------------------------------------
+ * Génère une description enrichie pour l'événement Calendar avec :
+ * - Niveau des participants [A], [B], [C]
+ * - Matières communes multiples
+ * - Commentaires avec nom du propriétaire
+ * - Lien Discord
+ */
+function GENERER_DESCRIPTION_EVENEMENT_(participants, subject) {
+  var description = "🎯 Matière commune : " + subject + "\n\n";
+  
+  // Détecter les matières communes multiples
+  var matieresCommunes = [];
+  if (participants.length > 1) {
+    var matieresParParticipant = participants.map(function(p) {
+      return p.matieres || [];
+    });
+    
+    // Trouver les matières communes à tous
+    var premiereListe = matieresParParticipant[0];
+    for (var i = 0; i < premiereListe.length; i++) {
+      var matiere = premiereListe[i];
+      var estCommune = true;
+      for (var j = 1; j < matieresParParticipant.length; j++) {
+        if (matieresParParticipant[j].indexOf(matiere) === -1) {
+          estCommune = false;
+          break;
+        }
+      }
+      if (estCommune && matiere) {
+        matieresCommunes.push(matiere);
+      }
+    }
+  }
+  
+  if (matieresCommunes.length > 1) {
+    description += "📚 Matières communes : " + matieresCommunes.join(", ") + "\n\n";
+  }
+  
+  description += "👥 Participants :\n";
+  participants.forEach(function(p) {
+    var niveau = p.niveau || "";
+    var niveauCode = "";
+    if (niveau.includes("A")) niveauCode = "[A]";
+    else if (niveau.includes("B")) niveauCode = "[B]";
+    else if (niveau.includes("C")) niveauCode = "[C]";
+    
+    description += "• " + p.prenom + " " + p.nom + " " + niveauCode + "\n";
+    
+    if (p.commentaire && p.commentaire.trim()) {
+      description += "  💬 " + p.prenom + " : " + p.commentaire + "\n";
+    }
+  });
+  
+  description += "\n💬 Discord : " + CONFIG.DISCORD_LINK;
+  
+  return description;
+}
+
 function UPSERT_EVENEMENT_ET_PERSISTANCE_(
   dateISO,
   slotKey,
@@ -3959,12 +4022,8 @@ function UPSERT_EVENEMENT_ET_PERSISTANCE_(
     return p.prenom + " " + p.nom;
   });
 
-  var title = "👥 Groupe — " + subject + " — " + creneau.nom;
-  var description = "Participants:\n";
-  participants.forEach(function (p) {
-    description += "• " + p.prenom + " " + p.nom + " (" + p.email + ")\n";
-    if (p.commentaire) description += "  Commentaire: " + p.commentaire + "\n";
-  });
+  var title = "📚 " + subject + " - " + participants.length + " participants";
+  var description = GENERER_DESCRIPTION_EVENEMENT_(participants, subject);
 
   var eventId = "";
   if (ligne !== -1 && data[ligne - 1][4]) {
