@@ -19,7 +19,7 @@
 var CONFIG = {
   // 📧 EMAIL DE L'ADMINISTRATEUR (OBLIGATOIRE À MODIFIER)
   // Remplacez par votre adresse email pour recevoir les notifications
-  EMAIL_ADMIN: " ", // ⚠️ MODIFIER ICI - Votre email admin
+  EMAIL_ADMIN: "anthony.devfsjs@gmail.com", // ⚠️ MODIFIER ICI - Votre email admin
 
   // 📅 PARAMÈTRES TEMPORELS
   FUSEAU_HORAIRE: "Europe/Paris", // Fuseau horaire (Europe/Paris, America/New_York, etc.)
@@ -891,6 +891,58 @@ function ZERO_PAD_(num) {
 }
 
 /**
+ * Parse un horodatage venant de la feuille (Date ou String locale)
+ * Retourne un objet Date; tente plusieurs formats fr/us.
+ */
+function PARSE_TIMESTAMP_(value, tz) {
+  if (Object.prototype.toString.call(value) === "[object Date]") {
+    return value;
+  }
+  var s = String(value || "").trim();
+  if (!s) return null;
+  // Essaye ISO direct
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
+  // Essaye MM/dd/yyyy[ HH:mm[:ss]] (format US) ou dd/MM/yyyy ou dd-MM-yyyy
+  var m = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (m) {
+    var a = parseInt(m[1], 10);
+    var b = parseInt(m[2], 10);
+    var year = parseInt(m[3], 10);
+    var hh = m[4] ? parseInt(m[4], 10) : 0;
+    var mm = m[5] ? parseInt(m[5], 10) : 0;
+    var ss = m[6] ? parseInt(m[6], 10) : 0;
+    
+    // Heuristique pour MM/dd/yyyy (US) vs dd/MM/yyyy (FR)
+    var day, month;
+    if (a > 12 && b <= 12) {
+      // a=jour, b=mois (format FR dd/MM/yyyy)
+      day = a; month = b - 1;
+    } else if (b > 12 && a <= 12) {
+      // b=jour, a=mois (format FR dd/MM/yyyy)  
+      day = b; month = a - 1;
+    } else if (a <= 12 && b <= 12) {
+      // Ambiguïté: on assume MM/dd/yyyy (US) par défaut
+      month = a - 1; day = b;
+    } else {
+      // Fallback
+      day = a; month = b - 1;
+    }
+    var out = new Date(year, month, day, hh, mm, ss, 0);
+    return isNaN(out.getTime()) ? null : out;
+  }
+  return null;
+}
+
+/**
+ * Vérifie rapidement qu'un email est plausible.
+ */
+function VALID_EMAIL_(email) {
+  var s = String(email || "").trim();
+  return !!s && /.+@.+\..+/.test(s);
+}
+
+/**
  * Écrit une entrée dans l'audit
  */
 function ECRIRE_AUDIT_(action, details) {
@@ -1312,7 +1364,7 @@ function CREER_FORMULAIRE_HEBDO_() {
     var formId = CREER_FORMULAIRE_SEMAINE_(lundiProchain);
     
     Logger.log("✅ Formulaire hebdomadaire créé : " + formId);
-
+    
     // Notification admin avec lien du formulaire
     var form = FormApp.openById(formId);
     var infoSemaine = CALCULER_SEMAINE_ISO_(lundiProchain);
@@ -1757,24 +1809,24 @@ function TRAITER_REPONSE_FORMULAIRE_(e) {
     
     // === ENVOI EMAIL ÉTUDIANT (désactivable) ===
     if (CONFIG.ENVOI_CONFIRMATION_ETUDIANT) {
-      ENVOYER_EMAIL_CONFIRMATION_(
-        email,
-        prenom,
-        nom,
-        niveau,
-        groupe,
-        matiere1,
-        type1,
-        matiere2,
-        type2,
+    ENVOYER_EMAIL_CONFIRMATION_(
+      email,
+      prenom,
+      nom,
+      niveau,
+      groupe,
+      matiere1,
+      type1,
+      matiere2,
+      type2,
         matiere3,
         type3,
         matiere4,
         type4,
         creneauxChoisis,
-        modeReplace,
-        numSemaine
-      );
+      modeReplace,
+      numSemaine
+    );
     }
     
     // === NOTIFIER L'ADMIN ===
@@ -3458,7 +3510,7 @@ function CREER_FORMULAIRE_SEMAINE_(lundiSemaine) {
       .setTitle("Commentaire (optionnel)")
       .setHelpText("Précision utile pour l'organisation (max 300 caractères)")
       .setRequired(false);
-
+    
     // Sauvegarder les IDs
     props.setProperty(CONFIG.PROPS.ID_FORM, formId);
     props.setProperty(CONFIG.PROPS.SEMAINE_FORM, numSemaine);
@@ -3664,21 +3716,42 @@ function OBTENIR_SLOTS_DU_JOUR_(dateJS) {
  * "Oui" pour le slotKey demandé, dans la semaine courante.
  * Pour la déduplication, on garde la réponse la plus récente (Horodateur).
  */
-function CHARGER_CANDIDATS_POUR_SLOT_(sheetReponses, slotKey) {
+function CHARGER_CANDIDATS_POUR_SLOT_(sheetReponses, slotKey, dateRef) {
   var data = sheetReponses.getDataRange().getValues();
   if (data.length <= 1) return [];
 
-  // Déterminer le lundi de la semaine courante
-  var lundiSemaine = OBTENIR_LUNDI_SEMAINE_(new Date());
-  var dimancheSemaine = AJOUTER_JOURS_(lundiSemaine, 6);
+  // DIAGNOSTIC DÉTAILLÉ
+  Logger.log("[Diag] === CHARGER_CANDIDATS_POUR_SLOT_ ===");
+  Logger.log("[Diag] slotKey: " + slotKey);
+  Logger.log("[Diag] dateRef: " + dateRef);
+  Logger.log("[Diag] Total lignes: " + data.length);
 
-  var colSlot = SLOT_COLONNE[slotKey] - 1; // 0-based
+  // Pour le batch 12h : traiter TOUTES les réponses (pas de filtre par semaine d'inscription)
+  // Les inscriptions peuvent être faites le dimanche pour la semaine suivante
+  var ref = dateRef || new Date();
+  var lundiSemaine = OBTENIR_LUNDI_SEMAINE_(ref);
+  var dimancheSemaine = AJOUTER_JOURS_(lundiSemaine, 6);
+  Logger.log("[Diag] Semaine cible: " + lundiSemaine + " à " + dimancheSemaine);
+  Logger.log("[Diag] Mode: traiter TOUTES les réponses (pas de filtre par date d'inscription)");
+
+  var colSlot = CONFIG.SLOT_COLONNE[slotKey];
+  if (!colSlot) {
+    Logger.log("[Diag] ERREUR: slotKey '" + slotKey + "' non trouvé dans CONFIG.SLOT_COLONNE");
+    Logger.log("[Diag] Slots disponibles: " + Object.keys(CONFIG.SLOT_COLONNE).join(", "));
+    return [];
+  }
+  Logger.log("[Diag] Colonne slot: " + colSlot);
+  colSlot = colSlot - 1; // 0-based
   var mapParEmail = {}; // email -> ligne la + récente
 
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
-    var horodateur = new Date(row[CONFIG.COLONNES_REPONSES.TIMESTAMP - 1]);
-    if (horodateur < lundiSemaine || horodateur > dimancheSemaine) continue; // hors semaine
+    var horoCell = row[CONFIG.COLONNES_REPONSES.TIMESTAMP - 1];
+    var horodateur = PARSE_TIMESTAMP_(horoCell, CONFIG.FUSEAU_HORAIRE);
+    if (!horodateur) continue;
+    Logger.log("[Diag] Ligne " + i + ": horodateur=" + horodateur + " (cell=" + horoCell + ")");
+    // SUPPRIMÉ: filtre par semaine d'inscription - on traite TOUTES les réponses
+    // if (horodateur < lundiSemaine || horodateur > dimancheSemaine) continue;
 
     var email = row[CONFIG.COLONNES_REPONSES.EMAIL - 1];
     // Si doublon, garder le + récent
@@ -3690,7 +3763,9 @@ function CHARGER_CANDIDATS_POUR_SLOT_(sheetReponses, slotKey) {
   var candidats = [];
   for (var email in mapParEmail) {
     var row = mapParEmail[email].row;
-    if (row[colSlot] !== "Oui") continue; // non disponible
+    var slotValue = String(row[colSlot] || "").trim();
+    Logger.log("[Diag] " + email + " -> slotValue='" + slotValue + "'");
+    if (slotValue !== "Oui") continue; // non disponible
 
     // Construire objet candidat
     var matieres = [];
@@ -3703,8 +3778,12 @@ function CHARGER_CANDIDATS_POUR_SLOT_(sheetReponses, slotKey) {
       }
     }
 
+    if (!VALID_EMAIL_(email)) {
+      Logger.log("[Diag] Email invalide ignoré: '" + email + "'");
+      continue;
+    }
     candidats.push({
-      email: email,
+      email: String(email).trim(),
       prenom: row[CONFIG.COLONNES_REPONSES.PRENOM - 1],
       nom: row[CONFIG.COLONNES_REPONSES.NOM - 1],
       niveau: row[CONFIG.COLONNES_REPONSES.NIVEAU - 1],
@@ -4031,14 +4110,50 @@ function LANCER_BATCH_MIDI_MANUEL_AUJOURDHUI_() {
     var tz = CONFIG.FUSEAU_HORAIRE;
     var today = new Date();
     EXECUTER_BATCH_POUR_DATE_(today);
-    SpreadsheetApp.getUi().alert(
-      "Batch relancé pour le " +
-        Utilities.formatDate(today, tz, "yyyy-MM-dd") +
-        "."
-    );
+    try {
+      SpreadsheetApp.getUi().alert(
+        "Batch relancé pour le " +
+          Utilities.formatDate(today, tz, "yyyy-MM-dd") +
+          "."
+      );
+    } catch (uiErr) {
+      // Contexte autonome: pas d'UI → fallback email/log
+      try {
+        MailApp.sendEmail({
+          to: CONFIG.EMAIL_ADMIN,
+          subject: "Batch relancé (manuel)",
+          htmlBody:
+            GENERER_EMAIL_HEADER_("Batch relancé", "🕒") +
+            '<div class="card">Batch relancé pour le ' +
+            Utilities.formatDate(today, tz, "yyyy-MM-dd") +
+            ".</div>" +
+            GENERER_EMAIL_FOOTER_(),
+        });
+      } catch (mailErr) {
+        Logger.log(
+          "Info: Batch relancé pour le " +
+            Utilities.formatDate(today, tz, "yyyy-MM-dd")
+        );
+      }
+    }
   } catch (e) {
     Logger.log("❌ Batch manuel ajd err: " + e);
-    SpreadsheetApp.getUi().alert("Erreur: " + e);
+    try {
+      SpreadsheetApp.getUi().alert("Erreur: " + e);
+    } catch (_) {
+      try {
+        MailApp.sendEmail({
+          to: CONFIG.EMAIL_ADMIN,
+          subject: "Erreur batch manuel aujourd'hui",
+          htmlBody:
+            GENERER_EMAIL_HEADER_("Erreur batch manuel", "❌") +
+            '<div class="card"><pre>' + e + "</pre></div>" +
+            GENERER_EMAIL_FOOTER_(),
+        });
+      } catch (__) {
+        // noop
+      }
+    }
   }
 }
 
@@ -4046,17 +4161,37 @@ function LANCER_BATCH_MIDI_MANUEL_AUJOURDHUI_() {
  * Demande une date (yyyy-mm-dd) et relance le batch pour cette date.
  */
 function LANCER_BATCH_MIDI_MANUEL_DATE_() {
-  var ui = SpreadsheetApp.getUi();
-  var resp = ui.prompt(
-    "Relancer le batch",
-    "Entrez une date au format yyyy-mm-dd",
-    ui.ButtonSet.OK_CANCEL
-  );
-  if (resp.getSelectedButton() !== ui.Button.OK) return;
-  var texte = resp.getResponseText().trim();
+  var ui, resp, texte;
+  try {
+    ui = SpreadsheetApp.getUi();
+    resp = ui.prompt(
+      "Relancer le batch",
+      "Entrez une date au format yyyy-mm-dd",
+      ui.ButtonSet.OK_CANCEL
+    );
+    if (resp.getSelectedButton() !== ui.Button.OK) return;
+    texte = resp.getResponseText().trim();
+  } catch (uiErr) {
+    // Contexte autonome: lire ADMIN!B3 comme source de vérité
+    try {
+      var ssId = PropertiesService.getScriptProperties().getProperty(
+        CONFIG.PROPS.ID_SPREADSHEET
+      );
+      var ss = SpreadsheetApp.openById(ssId);
+      var admin = ss.getSheetByName("ADMIN");
+      texte = String(admin.getRange(3, 2).getValue() || "").trim();
+    } catch (e) {
+      Logger.log("⚠️ Impossible de lire ADMIN!B3 pour la date: " + e);
+      return;
+    }
+  }
   var parts = texte.split("-");
   if (parts.length !== 3) {
-    ui.alert("Format invalide. Exemple: 2025-10-06");
+    try {
+      SpreadsheetApp.getUi().alert("Format invalide. Exemple: 2025-10-06");
+    } catch (_) {
+      Logger.log("Format invalide. Exemple: 2025-10-06");
+    }
     return;
   }
   var y = parseInt(parts[0], 10);
@@ -4064,7 +4199,22 @@ function LANCER_BATCH_MIDI_MANUEL_DATE_() {
   var d = parseInt(parts[2], 10);
   var dateJS = new Date(y, m, d, 12, 0, 0, 0);
   EXECUTER_BATCH_POUR_DATE_(dateJS);
-  ui.alert("Batch relancé pour le " + texte + ".");
+  try {
+    SpreadsheetApp.getUi().alert("Batch relancé pour le " + texte + ".");
+  } catch (_) {
+    try {
+      MailApp.sendEmail({
+        to: CONFIG.EMAIL_ADMIN,
+        subject: "Batch relancé (manuel) pour " + texte,
+        htmlBody:
+          GENERER_EMAIL_HEADER_("Batch relancé", "🕒") +
+          '<div class="card">Batch relancé pour le ' + texte + ".</div>" +
+          GENERER_EMAIL_FOOTER_(),
+      });
+    } catch (__) {
+      Logger.log("Batch relancé pour le " + texte + ".");
+    }
+  }
 }
 
 /**
@@ -4112,8 +4262,43 @@ function EXECUTER_BATCH_POUR_DATE_(dateJS) {
     var resume = '<div class="card"><h2>Batch manuel ' + dateISO + "</h2>";
 
     slots.forEach(function (slotKey) {
-      var candidats = CHARGER_CANDIDATS_POUR_SLOT_(sheetRep, slotKey);
+      var candidats = CHARGER_CANDIDATS_POUR_SLOT_(sheetRep, slotKey, dateJS);
+      // Diagnostics
+      try {
+        Logger.log(
+          "[Diag] " +
+            slotKey +
+            ": candidats=" +
+            candidats.length +
+            ", emails=" +
+            candidats
+              .map(function (c) {
+                return (c.prenom || "") + " " + (c.nom || "") + " <" + c.email + ">";
+              })
+              .join(", ")
+        );
+      } catch (e) {
+        Logger.log("[Diag] erreur log candidats: " + e);
+      }
+
       var groupes = FORMER_GROUPES_POUR_SLOT_(candidats);
+      try {
+        Logger.log(
+          "[Diag] " + slotKey + ": groupes formés=" + groupes.length
+        );
+        groupes.forEach(function (g, idx) {
+          var participants = g.participants
+            .map(function (p) {
+              return (p.prenom || "") + " " + (p.nom || "");
+            })
+            .join(", ");
+          Logger.log(
+            "[Diag]   G" + (idx + 1) + " subject='" + g.subject + "' => " + participants
+          );
+        });
+      } catch (e) {
+        Logger.log("[Diag] erreur log groupes: " + e);
+      }
 
       resume += "<h3>" + slotKey + " — " + groupes.length + " groupe(s)</h3>";
       groupes.forEach(function (g, idx) {
