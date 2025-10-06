@@ -3162,6 +3162,59 @@ function TEST_BATCH_NOUVEAU() {
 }
 
 /**
+ * AJOUTE RAPIDEMENT 3 PARTICIPANTS DE TEST
+ */
+function AJOUTER_PARTICIPANTS_TEST() {
+  Logger.log("➕ Ajout de 3 participants de test...");
+  
+  var props = PropertiesService.getScriptProperties();
+  var ssId = props.getProperty(CONFIG.PROPS.ID_SPREADSHEET);
+  var ss = SpreadsheetApp.openById(ssId);
+  var sheet = ss.getSheetByName(CONFIG.ONGLETS.REPONSES);
+  
+  var now = new Date();
+  var participants = [
+    ["alice@test.com", "Alice", "Test", "[B3] Bachelor 3", "[L3A] Groupe A", "Mathématiques", "📝 Révisions", "🆘 Je suis coulé"],
+    ["bob@test.com", "Bob", "Test", "[B3] Bachelor 3", "[L3B] Groupe B", "Mathématiques", "📝 Révisions", "💪 Viens pour aider"],
+    ["carla@test.com", "Carla", "Test", "[B3+L] Bachelor 3 + Licence", "[L3C] Groupe C", "Mathématiques", "📝 Révisions", "✅ Révisions"]
+  ];
+  
+  participants.forEach(function(p) {
+    var row = [
+      now, // Horodateur
+      p[0], // Email
+      p[1], // Prénom
+      p[2], // Nom
+      p[3], // Niveau
+      p[4], // Groupe
+      p[5], // Matière 1
+      p[6], // Type 1
+      p[7], // Accompagnement 1
+      "Aucune matière (ne pas choisir)", // Matière 2
+      "", // Type 2
+      "", // Accompagnement 2
+      "Aucune matière (ne pas choisir)", // Matière 3
+      "", // Type 3
+      "", // Accompagnement 3
+      "Aucune matière (ne pas choisir)", // Matière 4
+      "", // Type 4
+      "", // Accompagnement 4
+      "Oui", // Jeudi Campus
+      "Oui", // Lundi Discord
+      "Oui", // Mardi Discord
+      "Oui", // Mercredi Discord
+      "Oui", // Jeudi Discord
+      "Oui", // Vendredi Discord
+      "" // Commentaire
+    ];
+    sheet.appendRow(row);
+  });
+  
+  Logger.log("✅ 3 participants ajoutés !");
+  Logger.log("📧 Emails : alice@test.com, bob@test.com, carla@test.com");
+}
+
+/**
  * Test spécifique du batch pour identifier le problème de contexte
  */
 function TEST_BATCH_CONTEXTE() {
@@ -4192,10 +4245,25 @@ function CHARGER_CANDIDATS_POUR_SLOT_(sheetReponses, slotKey, dateRef) {
       Logger.log("[Diag] Email invalide ignoré: '" + email + "'");
       continue;
     }
+    
+    // Vérification : ignorer si aucune matière valide
+    if (matieres.length === 0) {
+      Logger.log("[Diag] " + email + " ignoré : aucune matière valide");
+      continue;
+    }
+    
+    // Vérification : ignorer si prénom ou nom vide
+    var prenom = row[CONFIG.COLONNES_REPONSES.PRENOM - 1];
+    var nom = row[CONFIG.COLONNES_REPONSES.NOM - 1];
+    if (!prenom || !nom || prenom === "" || nom === "") {
+      Logger.log("[Diag] " + email + " ignoré : prénom ou nom vide");
+      continue;
+    }
+    
     candidats.push({
       email: String(email).trim(),
-      prenom: row[CONFIG.COLONNES_REPONSES.PRENOM - 1],
-      nom: row[CONFIG.COLONNES_REPONSES.NOM - 1],
+      prenom: prenom,
+      nom: nom,
       niveau: row[CONFIG.COLONNES_REPONSES.NIVEAU - 1],
       groupe: row[CONFIG.COLONNES_REPONSES.GROUPE - 1],
       matieres: matieres,
