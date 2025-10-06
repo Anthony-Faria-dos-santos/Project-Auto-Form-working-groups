@@ -954,9 +954,21 @@ function DEMARRER_SYSTEME() {
       );
     }
     
-    // Calculer le lundi de la semaine prochaine
+    // Déterminer la semaine cible
+    // Règle: entre dimanche 09:00 et dimanche suivant 08:59, on ouvre pour la semaine suivante.
+    // Sinon, on ouvre pour la semaine en cours.
     var maintenant = new Date();
-    lundiSemaine = AJOUTER_JOURS_(OBTENIR_LUNDI_SEMAINE_(maintenant), 7); // ✅ Assignation
+    var tz = CONFIG.FUSEAU_HORAIRE;
+    var jourISO = Utilities.formatDate(maintenant, tz, "u"); // 1=lundi ... 7=dimanche
+    var heure24 = parseInt(Utilities.formatDate(maintenant, tz, "H"), 10);
+
+    if (jourISO === "7" && heure24 >= CONFIG.HEURE_CREATION_FORM) {
+      // Dimanche après l'heure de création → préparer la semaine suivante
+      lundiSemaine = OBTENIR_LUNDI_SEMAINE_(AJOUTER_JOURS_(maintenant, 1));
+    } else {
+      // Tous les autres cas → semaine en cours
+      lundiSemaine = OBTENIR_LUNDI_SEMAINE_(maintenant);
+    }
     
     Logger.log(
       "📅 Semaine cible : " +
