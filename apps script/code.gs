@@ -2197,6 +2197,17 @@ function ENVOYER_EMAIL_CONFIRMATION_(
       "<li>Utilise Discord de manière appropriée</li>" +
       "</ul>" +
       "</div>" +
+      '<div style="margin-top: 20px; padding: 15px; background-color: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 4px;">' +
+      "<h3 style='margin-top: 0; color: #3b82f6;'>💬 Ressources et communication</h3>" +
+      '<p style="margin-bottom: 10px;">Tu peux contribuer à la communauté :</p>' +
+      '<ul style="line-height: 1.6; margin-bottom: 10px;">' +
+      '<li><strong>📢 Canal Info_Orga :</strong> <a href="https://discord.com/channels/1414939127643901975/1417171127079534744" style="color: #3b82f6;">Laisse des messages sur l\'organisation</a></li>' +
+      '<li><strong>📚 Canal Doc_fiches de cours :</strong> <a href="https://discord.com/channels/1414939127643901975/1417171160956801064" style="color: #3b82f6;">Partage tes fiches et ressources</a></li>' +
+      '<li><strong>💡 Propose des sujets :</strong> Oriente les sessions selon tes besoins</li>' +
+      '<li><strong>🔧 Améliore le système :</strong> Propose des modifications directement à ' + CONFIG.EMAIL_ADMIN + ' ou via une <a href="https://github.com/Anthony-Faria-dos-santos/Project-Auto-Form-working-groups" style="color: #3b82f6;">pull request sur GitHub</a></li>' +
+      "</ul>" +
+      '<p style="font-size: 12px; color: #64748b; margin-bottom: 0;">📖 Documentation Google Apps Script : <a href="https://developers.google.com/apps-script/overview?hl=fr" style="color: #64748b;">Guide officiel</a></p>' +
+      "</div>" +
       "</div>";
     
     htmlBody += GENERER_EMAIL_FOOTER_();
